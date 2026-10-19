@@ -24,9 +24,9 @@ TS_AUTH_STATE_DIR="$PWD/state" python3 -m uvicorn server:app --host 127.0.0.1 --
 
 ## 使用
 
-管理员在网页登录后生成授权码。授权码首次激活绑定客户端Keychain安装标识；客户端先取得一次性challenge，再激活得到10分钟以内有效的Ed25519签名结果，需在期满后重新向服务器验证。撤销可阻止新授权，已经签出的授权最长仍可使用10分钟。
+管理员在网页登录后生成授权码。授权码首次激活绑定客户端Keychain安装标识；客户端先取得一次性challenge，再激活得到10分钟以内有效的Ed25519签名结果，HUD 在到期前自动向服务器验证并轮换续期令牌。撤销可阻止新授权，已经签出的授权最长仍可使用10分钟。
 
-这不是硬件身份认证或App Attest。用户若修改客户端代码、复制安装标识、调整本机时钟或绕过本地调用点，不能靠这套纯软件方案承诺绝对防破解。最终App仍须把验签结果接入每个实际功能入口；当前尚未完成这项整合。
+这不是硬件身份认证或App Attest。用户若修改客户端代码、复制安装标识、调整本机时钟或绕过本地调用点，不能靠这套纯软件方案承诺绝对防破解。新 App 已在 HUD 启动入口和读取循环校验签名租约；设备端读写权限与实际运行仍须实机检查。
 
 ## 接口
 
@@ -35,6 +35,11 @@ TS_AUTH_STATE_DIR="$PWD/state" python3 -m uvicorn server:app --host 127.0.0.1 --
 - GET /admin/licenses：查看最近1000条授权。
 - POST /admin/licenses/{id}/revoke：撤销授权。
 - POST /v1/challenge：device_id，返回短期一次性nonce。
-- POST /v1/activate：device_id、license_key、nonce；返回原始载荷base64与Ed25519签名base64。
+- POST /v1/activate：device_id、license_key、nonce；返回原始载荷base64、Ed25519签名base64与续期令牌。
+- POST /v1/refresh：device_id、refresh_token、nonce；校验撤销状态并轮换令牌，旧令牌立即失效。
 
 验证：`python3 selfcheck.py`，独立临时数据库和真实本地HTTP服务，覆盖错误密码、未登录发码、签名、篡改、重放、跨设备使用、撤销和过期。
+
+## Docker 与 HTTPS
+
+已提供 Dockerfile、compose.yaml 和 Caddyfile。先把 Caddyfile 中的域名改为你的域名，将已有私有状态放到 AuthServer/state，然后运行 `docker compose up -d --build`。应用中填写该 HTTPS 域名。不要对已有状态重新运行 bootstrap；服务会自动创建续期令牌表，保留已有管理员与签发密钥。
