@@ -83,3 +83,12 @@
 - Where: Core/CoordinateAccess.cpp; the original single-candidate routine also returns zero newly written locations for this input.
 - Repro: initialize all nine fixture locations, create a new CoordinateAccess instance, then scan again.
 - Correction: separately track preexisting four-byte NOP locations and accept a fresh already-initialized candidate only for a complete configured mask with valid metadata. A single partial NOP match remains insufficient. Twelve coordinate checks pass, including a shorter code buffer where only in-bounds configured locations apply.
+
+## Xcode rewrote the application icon PNG
+
+- Expected: preserve the supplied original UI image bytes in the rebuilt package.
+- What happened: package verification found a different AppIcon60x60@2x.png despite valid code/resource seals. The source has standard PNG chunks; the packaged file contains CgBI/iDOT and a removed text chunk.
+- Where: Xcode CopyPNGFile, run 39253944257; `copypng -compress -strip-PNG-text` is recorded in the compiler log.
+- Repro: compare the icon in that IPA with Resources/AppIcon60x60@2x.png or run Tools/verify_ipa.py.
+- Cause: automatic PNG optimization and text-metadata stripping, not evidence of visual corruption or a game-runtime failure.
+- Correction: disable COMPRESS_PNG_FILES and STRIP_PNG_TEXT and rerun exact-byte package verification.

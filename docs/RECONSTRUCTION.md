@@ -62,3 +62,7 @@ Task lookup, kernel memory I/O and vector allocation/deallocation are controlled
 Further drawing comparison corrected side-skill outlines/overlay opacity, the world recall badge's local rectangle and font scaling, the no-hero top-panel layout, and the app-level ESP master switch/data-ready gate recovered from original 0x100014f74 and renderImGuiMenu.
 
 A fresh HUD can now recognize a fully initialized candidate only when all configured locations within the validated bytecode length contain four NOP bytes and the original module/object/state checks pass. A partial preexisting match is rejected. The original candidate routine still returns zero new writes in the all-NOP case; the C++ higher-level readiness recognition is an intentional restart repair and is tested separately from the byte-for-byte write-count/mask comparison.
+
+## Packaged integrity
+
+`Tools/verify_ipa.py` checks the embedded source-commit stamp, arm64/iOS deployment metadata, main executable CodeDirectory page/special hashes, sealed resource hashes, signed entitlements and original image bytes. It also checks that private issuer/admin state and reference/test material are absent from the app. Nested code entries without raw resource hashes are counted separately rather than claimed independently verified. This tool makes no certificate-trust or device-runtime claim. Xcode PNG recompression/text stripping is disabled to retain the original icon bytes.
