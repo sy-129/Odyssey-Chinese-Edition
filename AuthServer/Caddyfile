@@ -1,0 +1,4 @@
+# Replace licenses.example.com with your own domain pointing to this machine.
+licenses.example.com {
+    reverse_proxy auth:8080
+}
