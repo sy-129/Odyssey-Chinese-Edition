@@ -1,0 +1,42 @@
+name: Store rebuilt IPA in repository
+on:
+  push:
+    paths:
+      - '.github/workflows/store-rebuilt-ipa.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  store:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrollSpeedRebuild-unverified-on-device
+          run-id: 39257453405
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/rebuilt-ipa
+      - name: Verify and store exact IPA
+        env:
+          ARTIFACT_DIR: ${{ runner.temp }}/rebuilt-ipa
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, hashlib, shutil
+          source = list(pathlib.Path(os.environ["ARTIFACT_DIR"]).rglob("*.ipa"))
+          assert len(source) == 1, source
+          digest = hashlib.sha256(source[0].read_bytes()).hexdigest()
+          assert digest == "48201804f38971b36d7f64d4649c8396b53ecbdc5d880a537215eb903c152422", digest
+          target = pathlib.Path("packages/TrollSpeedRebuild-c3d223f.ipa")
+          target.parent.mkdir(exist_ok=True)
+          shutil.copyfile(source[0], target)
+          target.with_suffix(".ipa.sha256").write_text(digest + "  " + target.name + "\n")
+          (target.parent / "README.md").write_text("# TrollSpeed 重建包\n\n[下载 IPA](TrollSpeedRebuild-c3d223f.ipa?raw=true)\n\n源码提交：c3d223f75e21583bc20cfaf8a7acdbc8c76d2a96。已通过云端编译、签名与完整性检查；真实设备坐标和 ESP 尚待验证。\n\n用巨魔安装后，打开应用并复制诊断，提供安装标识以签发本机离线授权。\n")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/TrollSpeedRebuild-c3d223f.ipa packages/TrollSpeedRebuild-c3d223f.ipa.sha256 packages/README.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Store verified c3d223f rebuilt IPA for download"
+          git push
