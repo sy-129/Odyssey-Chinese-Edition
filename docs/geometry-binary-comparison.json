@@ -3,10 +3,7 @@
   "compared_cases": 800,
   "passed": true,
   "max_absolute_error": 0.0,
-  "tolerance": {
-    "relative": 2e-06,
-    "absolute": 0.0002
-  },
+  "bit_exact_float32": true,
   "scope": [
     "ToScreen finite inputs",
     "mini-map projection finite inputs"

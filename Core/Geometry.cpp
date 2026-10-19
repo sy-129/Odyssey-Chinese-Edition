@@ -12,7 +12,10 @@ bool toScreen(Vec2 viewport,Vec2 p,const Matrix& m,Vec2& out){
 Vec2 toMiniMap(MapRect r,Vec2 p,const Matrix& m,float sx,float sy){
  float sign=m[0]>0?1.f:-1.f;float size=(r.width+r.height)*.5f;
  float x=std::fma((p.x*sign)/sx,size,r.x);
- float y=r.y-size*((p.y*sign)/sy);
+ // Original 0x100034c7c/0x100034c80 uses separate FMUL then FSUB.
+ // Retain the intermediate float rounding even when Clang contracts expressions.
+ volatile float scaledY=size*((p.y*sign)/sy);
+ float y=r.y-scaledY;
  return {std::fma(size,.5f,x),std::fma(size,.5f,y)};
 }
 std::optional<Vec2> decodePosition(std::int32_t x,std::int32_t y){

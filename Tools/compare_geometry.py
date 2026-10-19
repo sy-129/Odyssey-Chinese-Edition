@@ -26,7 +26,7 @@ def compare(expected,actual):
  global maximum_error
  for e,v in zip(expected,actual):
   error=abs(e-v);maximum_error=max(maximum_error,error)
-  if not math.isclose(e,v,rel_tol=2e-6,abs_tol=2e-4):raise AssertionError((expected,actual))
+  if bits(e)!=bits(v):raise AssertionError({'case':count,'expected':expected,'actual':actual,'error':error,'expected_bits':hex(bits(e)),'actual_bits':hex(bits(v))})
 for n in range(400):
  m=[f32(rng.uniform(-2,2)) for _ in range(16)];xy=[f32(rng.uniform(-80,80)) for _ in range(2)];viewport=[1920.,1080.]
  u.mem_write(MATRIX,struct.pack('<16f',*m));u.reg_write(A.UC_ARM64_REG_X0,OUT);u.reg_write(A.UC_ARM64_REG_SP,STACK+0x18000);u.reg_write(A.UC_ARM64_REG_LR,STOP)
@@ -41,5 +41,5 @@ for n in range(400):
  for i,v in enumerate(args):u.reg_write(getattr(A,'UC_ARM64_REG_S'+str(i)),bits(v))
  u.emu_start(BASE+0x34bec,STOP,count=1000);expected=[getf(A.UC_ARM64_REG_S0),getf(A.UC_ARM64_REG_S1)]
  out=(ctypes.c_float*2)();lib.ts_map(*args,first,*scales,out);compare(expected,list(out));count+=1
-result={'original_binary_sha256':hashlib.sha256(b).hexdigest(),'compared_cases':count,'passed':True,'max_absolute_error':maximum_error,'tolerance':{'relative':2e-6,'absolute':2e-4},'scope':['ToScreen finite inputs','mini-map projection finite inputs'],'execution':'Unicorn ARM64 arithmetic only; Objective-C retain/release and scale getters controlled; no iOS/game execution'}
+result={'original_binary_sha256':hashlib.sha256(b).hexdigest(),'compared_cases':count,'passed':True,'max_absolute_error':maximum_error,'bit_exact_float32':True,'scope':['ToScreen finite inputs','mini-map projection finite inputs'],'execution':'Unicorn ARM64 arithmetic only; Objective-C retain/release and scale getters controlled; no iOS/game execution'}
 a.output.write_text(json.dumps(result,indent=2));print(json.dumps(result,indent=2))

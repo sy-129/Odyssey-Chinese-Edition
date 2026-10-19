@@ -92,3 +92,12 @@
 - Repro: compare the icon in that IPA with Resources/AppIcon60x60@2x.png or run Tools/verify_ipa.py.
 - Cause: automatic PNG optimization and text-metadata stripping, not evidence of visual corruption or a game-runtime failure.
 - Correction: disable COMPRESS_PNG_FILES and STRIP_PNG_TEXT and rerun exact-byte package verification.
+
+## Compiler contracted an original non-fused multiply/subtract
+
+- Expected: preserve the original ARM64 minimap routine's float32 results.
+- What happened: GCC-host comparisons had maximum error zero, but the macOS Clang build's tolerance-based report showed maximum error 0.000030517578125.
+- Where: Core/Geometry.cpp, minimap Y calculation; original 0x100034c7c is FMUL followed by FSUB at 0x100034c80.
+- Repro: run the 800-case binary comparison using macOS Clang's optimized host bridge from run 39254630468.
+- Cause: automatic floating-point expression contraction changed one rounding step.
+- Correction: retain a separately rounded float intermediate and require exact float32 bit comparison rather than a tolerance. Local strict comparison passes; macOS recheck is required.
