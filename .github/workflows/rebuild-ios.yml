@@ -30,7 +30,9 @@ jobs:
       - name: Ad hoc sign for TrollStore and package
         run: |
           APP=build/DerivedData/Build/Products/Release-iphoneos/TrollSpeedRebuild.app
-          if [ -d "$APP/Frameworks" ]; then find "$APP/Frameworks" -name '*.dylib' -exec codesign --force --sign - --timestamp=none {} \; fi
+          if [ -d "$APP/Frameworks" ]; then
+            find "$APP/Frameworks" -name '*.dylib' -exec codesign --force --sign - --timestamp=none {} \;
+          fi
           codesign --force --sign - --timestamp=none --entitlements App/Entitlements.plist --generate-entitlement-der "$APP"
           codesign --verify --strict "$APP"
           mkdir -p build/package/Payload
