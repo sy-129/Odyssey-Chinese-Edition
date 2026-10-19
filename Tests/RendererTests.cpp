@@ -3,7 +3,7 @@
 #include <stdexcept>
 struct Textures:ts::Textures {
  ImTextureID hero(int) override{return reinterpret_cast<void*>(1);}
- ImTextureID skill(int) override{return reinterpret_cast<void*>(2);}
+ ImTextureID skill(int,int=0) override{return reinterpret_cast<void*>(2);}
 };
 int main(){
  IMGUI_CHECKVERSION();ImGui::CreateContext();auto& io=ImGui::GetIO();io.DisplaySize={2532,1170};io.DeltaTime=1.f/60;
