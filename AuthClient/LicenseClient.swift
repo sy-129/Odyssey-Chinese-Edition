@@ -71,6 +71,21 @@ public struct LicenseClient: Sendable {
         self.base = baseURL
         self.publicKey = try Curve25519.Signing.PublicKey(rawRepresentation: raw)
     }
+    public static func verifyOffline(_ code: String, publicKeyBase64: String, installation: String) throws -> SignedLicense {
+        struct Envelope: Decodable { let payload: String; let signature: String }
+        guard code.hasPrefix("TSOFF1."), let keyData = Data(base64Encoded: publicKeyBase64) else { throw LicenseError.invalidConfiguration }
+        var encoded = String(code.dropFirst(7)).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        encoded += String(repeating: "=", count: (4 - encoded.count % 4) % 4)
+        guard let bytes = Data(base64Encoded: encoded), let envelope = try? JSONDecoder().decode(Envelope.self, from: bytes),
+              let payload = Data(base64Encoded: envelope.payload), let signature = Data(base64Encoded: envelope.signature) else { throw LicenseError.malformedReply }
+        let key = try Curve25519.Signing.PublicKey(rawRepresentation: keyData)
+        guard key.isValidSignature(signature, for: payload) else { throw LicenseError.invalidSignature }
+        let license = try JSONDecoder().decode(SignedLicense.self, from: payload)
+        guard license.device_id == installation else { throw LicenseError.wrongInstallation }
+        guard license.nonce.hasPrefix("offline-") else { throw LicenseError.wrongChallenge }
+        guard license.isCurrent else { throw LicenseError.expired }
+        return license
+    }
     private func post<Body: Encodable, Reply: Decodable>(_ path: String, _ body: Body) async throws -> Reply {
         var request = URLRequest(url: base.appendingPathComponent(path))
         request.httpMethod = "POST"
@@ -123,6 +138,10 @@ public final class TSLicenseBridge: NSObject {
     private static var leaseURL: URL {
         URL(fileURLWithPath: "/var/mobile/Library/Caches/local.trollspeed.rebuild/lease.json")
     }
+    @objc public static func installationIdentifier() -> String {
+        do { return try InstallationIdentity.load() }
+        catch { return "读取失败：\(error.localizedDescription)" }
+    }
     @objc public static func hasValidLease() -> Bool {
         do {
             let bytes = try Data(contentsOf: leaseURL)
@@ -160,6 +179,7 @@ public final class TSLicenseBridge: NSObject {
             defer { renewalQueue.sync { renewing = false } }
             do {
                 let stored = try JSONDecoder().decode(StoredLease.self, from: Data(contentsOf: leaseURL))
+                guard !stored.refresh_token.isEmpty else { return }
                 guard let raw = Data(base64Encoded: stored.payload) else { return }
                 let lease = try JSONDecoder().decode(SignedLicense.self, from: raw)
                 // Renew before expiry; the new envelope still has to pass the pinned-key signature checks.
@@ -176,16 +196,28 @@ public final class TSLicenseBridge: NSObject {
     @objc public static func activate(_ server: String, key: String, completion: @escaping (Bool, String) -> Void) {
         Task {
             do {
-                guard let url = URL(string: server),
-                      let configURL = Bundle.main.url(forResource: "public-config", withExtension: "json"),
+                guard let configURL = Bundle.main.url(forResource: "public-config", withExtension: "json"),
                       let config = try JSONSerialization.jsonObject(with: Data(contentsOf: configURL)) as? [String: Any],
                       let publicKey = config["public_key_base64"] as? String else { throw LicenseError.invalidConfiguration }
-                let client = try LicenseClient(baseURL: url, publicKeyBase64: publicKey)
-                let license = try await client.activate(key: key)
+                let activationKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
+                let license: SignedLicense
+                if activationKey.hasPrefix("TSOFF1.") {
+                    license = try LicenseClient.verifyOffline(activationKey, publicKeyBase64: publicKey, installation: InstallationIdentity.load())
+                    var encoded = String(activationKey.dropFirst(7)).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+                    encoded += String(repeating: "=", count: (4 - encoded.count % 4) % 4)
+                    guard let bytes = Data(base64Encoded: encoded) else { throw LicenseError.malformedReply }
+                    let envelope = try JSONDecoder().decode(StoredOffline.self, from: bytes)
+                    try store(payload: envelope.payload, signature: envelope.signature, refreshToken: "", server: "")
+                } else {
+                    guard let url = URL(string: server) else { throw LicenseError.invalidConfiguration }
+                    let client = try LicenseClient(baseURL: url, publicKeyBase64: publicKey)
+                    license = try await client.activate(key: activationKey)
+                }
                 await MainActor.run { completion(true, "授权有效至 \(Date(timeIntervalSince1970: TimeInterval(license.expires_at)))") }
             } catch {
                 await MainActor.run { completion(false, "授权失败：\(error.localizedDescription)") }
             }
         }
     }
+    private struct StoredOffline: Decodable { let payload: String; let signature: String }
 }

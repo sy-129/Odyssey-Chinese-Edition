@@ -43,3 +43,15 @@ TS_AUTH_STATE_DIR="$PWD/state" python3 -m uvicorn server:app --host 127.0.0.1 --
 ## Docker 与 HTTPS
 
 已提供 Dockerfile、compose.yaml 和 Caddyfile。先把 Caddyfile 中的域名改为你的域名，将已有私有状态放到 AuthServer/state，然后运行 `docker compose up -d --build`。应用中填写该 HTTPS 域名。不要对已有状态重新运行 bootstrap；服务会自动创建续期令牌表，保留已有管理员与签发密钥。
+
+## 暂时没有服务器时：绑定本机的离线授权
+
+应用保留可配置的在线服务器地址，也支持 `TSOFF1.` 开头的离线码。先在手机主界面点“复制诊断”，取得“安装标识”中的完整 UUID，保留大小写。由持有本套私钥的管理员执行：
+
+```sh
+python3 issue_offline.py --state ./state --device '这里填安装标识' --days 7 --output ./offline-code.txt
+```
+
+将生成文件里的整行码粘贴到应用授权码输入框，服务器地址可以留空，再点激活。离线码验证 Ed25519 签名、安装标识、产品范围和有效期；签发私钥不会进入 IPA。允许 1–30 天，默认 7 天。离线码在到期前不能通过服务器远程撤销；需要随时撤销时使用在线模式。
+
+签发命令会登记授权记录。现有状态目录的私钥与应用公钥必须匹配；不要为已有应用随意重新 bootstrap。离线验签的 Swift 测试使用独立临时测试签发方，测试密钥和授权码不被打入应用。

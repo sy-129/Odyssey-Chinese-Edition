@@ -31,6 +31,12 @@ jobs:
           c++ -std=c++17 -O2 -dynamiclib -ICore Core/CoordinateAccess.cpp Tools/CoordinateBridge.cpp -o build/coordinate-bridge.dylib
           build/verification-venv/bin/python Tools/compare_geometry.py --binary build/original-arm64.bin --library build/geometry-bridge.dylib --output build/geometry-binary-comparison.json
           build/verification-venv/bin/python Tools/compare_coordinate_vm.py --binary build/original-arm64.bin --library build/coordinate-bridge.dylib --output build/coordinate-binary-comparison.json
+      - name: Verify online/offline authorization and Python-to-Swift signatures
+        run: |
+          build/verification-venv/bin/pip install -r AuthServer/requirements.txt
+          build/verification-venv/bin/python AuthServer/selfcheck.py --offline-fixture build/offline-license-fixture.json
+          xcrun swiftc -swift-version 5 -O -target "$(uname -m)-apple-macosx12.0" AuthClient/LicenseClient.swift Tests/OfflineLicenseTests.swift -o build/offline-client-checks
+          ./build/offline-client-checks build/offline-license-fixture.json
       - name: Generate project and build with Apple SDK
         run: |
           python3 Tools/generate_project.py

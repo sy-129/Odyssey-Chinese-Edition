@@ -68,3 +68,9 @@ A fresh HUD can now recognize a fully initialized candidate only when all config
 `Tools/verify_ipa.py` checks the embedded source-commit stamp, arm64/iOS deployment metadata, main executable CodeDirectory page/special hashes, sealed resource hashes, signed entitlements and original image bytes. It also checks that private issuer/admin state and reference/test material are absent from the app. Nested code entries without raw resource hashes are counted separately rather than claimed independently verified. This tool makes no certificate-trust or device-runtime claim. Xcode PNG recompression/text stripping is disabled to retain the original icon bytes.
 
 The geometry comparison now requires exact float32 bits. A macOS Clang contraction difference (maximum 0.000030517578125 in the old tolerance-based report) was traced to original FMUL/FSUB at 0x100034c7c/0x100034c80. The rebuilt minimap calculation now retains that intermediate rounding; the prior reports are not retroactively described as bit-exact.
+
+## Server-free owner-issued activation
+
+Because the user currently has no authorization server, the same application also accepts an owner-issued offline code bound to its Keychain installation UUID. Copy-diagnostics exposes that UUID; `AuthServer/issue_offline.py` signs a 1–30 day lease using the existing private issuer state. The client verifies its pinned public key, device, scope, offline nonce domain and expiry, then stores the signed lease. No issuer secret or universal activation password is embedded in the app. Offline leases cannot be remotely revoked before expiry; online activation/renewal remains configurable and unchanged.
+
+The backend self-check now covers 29 cases. CI additionally compiles a macOS CryptoKit client test and verifies valid/rejected offline codes plus an actual Python-issued fixture, without accessing device Keychain or running the game.

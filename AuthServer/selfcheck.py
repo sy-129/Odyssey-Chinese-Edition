@@ -1,7 +1,8 @@
 """Real local HTTP integration checks, isolated from the product issuer state."""
-import base64,json,os,pathlib,socket,sqlite3,subprocess,sys,tempfile,time,urllib.request,urllib.error
+import argparse,base64,json,os,pathlib,socket,sqlite3,subprocess,sys,tempfile,time,urllib.request,urllib.error
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from cryptography.exceptions import InvalidSignature
+parser=argparse.ArgumentParser();parser.add_argument('--offline-fixture',type=pathlib.Path);args=parser.parse_args()
 root=pathlib.Path(__file__).resolve().parent
 with tempfile.TemporaryDirectory(prefix='trollspeed-auth-check-') as temporary:
  state=pathlib.Path(temporary);subprocess.run([sys.executable,str(root/'bootstrap.py'),'--state',str(state)],check=True,stdout=subprocess.DEVNULL)
@@ -63,7 +64,21 @@ with tempfile.TemporaryDirectory(prefix='trollspeed-auth-check-') as temporary:
   nonce=request('/v1/challenge',{'device_id':device})[1]['nonce'];check(request('/v1/activate',{'device_id':device,'license_key':expired['license_key'],'nonce':nonce})[0]==403)
   with sqlite3.connect(state/'auth.db') as db:db.execute('UPDATE sessions SET expires=0')
   check(request('/admin/licenses',token=token)[0]==401)
-  print(str(checks)+' authorization checks passed; real local HTTP, signature, replay, binding, expiry and revocation verified.')
+  from issue_offline import issue as issue_offline
+  offline_device='11111111-AAAA-3333-BBBB-555555555555';offline_path=state/'offline-code.txt'
+  offline_payload=issue_offline(state,offline_device,7,offline_path);code=offline_path.read_text().strip();check(code.startswith('TSOFF1.'))
+  encoded=code[7:];offline_envelope=json.loads(base64.urlsafe_b64decode(encoded+'='*((4-len(encoded)%4)%4)))
+  offline_raw=base64.b64decode(offline_envelope['payload']);public.verify(base64.b64decode(offline_envelope['signature']),offline_raw);check(True)
+  check(json.loads(offline_raw)['device_id']==offline_device)
+  check(offline_payload['expires_at']-offline_payload['issued_at']==7*86400)
+  with sqlite3.connect(state/'auth.db') as db:check(db.execute('SELECT device FROM licenses WHERE id=?',(offline_payload['license_id'],)).fetchone()[0]==offline_device)
+  for bad_device,bad_days in [('invalid',7),(offline_device,31)]:
+   try:issue_offline(state,bad_device,bad_days,state/'invalid-code.txt');check(False)
+   except ValueError:check(True)
+  if args.offline_fixture:
+   args.offline_fixture.parent.mkdir(parents=True,exist_ok=True)
+   args.offline_fixture.write_text(json.dumps({'code':code,'device':offline_device,'public_key':json.loads((state/'public-config.json').read_text())['public_key_base64']}))
+  print(str(checks)+' authorization checks passed; real local HTTP plus offline signature/device/expiry and input checks verified.')
  finally:
   proc.terminate()
   try:proc.wait(5)

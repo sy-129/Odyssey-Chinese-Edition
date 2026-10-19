@@ -19,8 +19,8 @@
 -(void)viewDidLoad{
  [super viewDidLoad];self.title=@"TrollSpeed";self.view.backgroundColor=UIColor.systemBackgroundColor;
  _settings=[ts::settingsDictionary(ts::loadSettings()) mutableCopy];_names=[_settings.allKeys sortedArrayUsingSelector:@selector(compare:)];
- _server=[self field:@"授权服务器 https://…" secure:NO];_server.keyboardType=UIKeyboardTypeURL;_server.text=[NSUserDefaults.standardUserDefaults stringForKey:@"authorizationServer"]?:@"";
- _key=[self field:@"授权码" secure:YES];_status=[UILabel new];_status.numberOfLines=0;_status.font=[UIFont systemFontOfSize:13];_status.text=@"先配置授权服务器并激活，再启动悬浮层。设置修改后立即保存。";
+ _server=[self field:@"授权服务器 https://…（离线码可留空）" secure:NO];_server.keyboardType=UIKeyboardTypeURL;_server.text=[NSUserDefaults.standardUserDefaults stringForKey:@"authorizationServer"]?:@"";
+ _key=[self field:@"在线或离线授权码" secure:YES];_status=[UILabel new];_status.numberOfLines=0;_status.font=[UIFont systemFontOfSize:13];_status.text=@"填写服务器进行在线激活，或粘贴绑定本机的离线授权码。没有离线码时，先点“复制诊断”取得安装标识。";
  UIStackView* buttons=[[UIStackView alloc] initWithArrangedSubviews:@[[self button:@"激活 / 续期" action:@selector(activate)],[self button:@"启动悬浮层" action:@selector(start)],[self button:@"停止悬浮层" action:@selector(stop)],[self button:@"复制诊断" action:@selector(diagnostics)]]];buttons.distribution=UIStackViewDistributionFillEqually;
  UIStackView* header=[[UIStackView alloc] initWithArrangedSubviews:@[_server,_key,buttons,_status]];header.axis=UILayoutConstraintAxisVertical;header.spacing=10;header.translatesAutoresizingMaskIntoConstraints=NO;[self.view addSubview:header];
  _table=[[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleInsetGrouped];_table.dataSource=self;_table.delegate=self;_table.translatesAutoresizingMaskIntoConstraints=NO;[self.view addSubview:_table];
@@ -39,8 +39,8 @@
 -(void)diagnostics{
  NSString* report=[NSString stringWithContentsOfFile:@"/var/mobile/Library/Caches/local.trollspeed.rebuild.status.json" encoding:NSUTF8StringEncoding error:nil];
  NSString* startup=[NSString stringWithContentsOfFile:@"/var/mobile/Library/Caches/local.trollspeed.rebuild.log" encoding:NSUTF8StringEncoding error:nil];
- UIPasteboard.generalPasteboard.string=[NSString stringWithFormat:@"启动记录：%@\n运行诊断：%@",startup?:@"尚无启动记录",report?:@"尚无运行记录"];
- _status.text=@"已复制运行诊断，可用于定位启动、授权或数据读取问题。";
+ UIPasteboard.generalPasteboard.string=[NSString stringWithFormat:@"安装标识：%@\n启动记录：%@\n运行诊断：%@",[TSLicenseBridge installationIdentifier],startup?:@"尚无启动记录",report?:@"尚无运行记录"];
+ _status.text=@"已复制安装标识和运行诊断，可用于签发离线码及定位运行问题。";
 }
 -(NSInteger)tableView:(UITableView*)table numberOfRowsInSection:(NSInteger)section{(void)table;(void)section;return _names.count;}
 -(UITableViewCell*)tableView:(UITableView*)table cellForRowAtIndexPath:(NSIndexPath*)index{

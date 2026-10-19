@@ -79,7 +79,7 @@ with zipfile.ZipFile(args.ipa) as z:
     for name in ['xuanfuqiu.jpg','AppIcon60x60@2x.png']:
         assert z.read(prefix+name)==(source/'Resources'/name).read_bytes(),('Original UI asset mismatch',name)
     assert z.read(prefix+'public-config.json')==(source/'AuthClient/public-config.json').read_bytes()
-    forbidden={'Reference','Tests','AuthServer','issuer.pem','auth.db','ADMIN-CREDENTIALS.txt','original-arm64.bin'}
+    forbidden={'Reference','Tests','AuthServer','issuer.pem','auth.db','ADMIN-CREDENTIALS.txt','original-arm64.bin','offline-license-fixture.json','offline-client-checks'}
     assert all(not forbidden.intersection(Path(n).parts) for n in names),'Private/reference/test material in application'
 report={'passed':True,'source_commit':args.commit,'ipa_sha256':hashlib.sha256(args.ipa.read_bytes()).hexdigest(),'executable_sha256':hashlib.sha256(binary).hexdigest(),'minimum_ios':'16.0','architecture':'arm64','original_game_images':len(assets),'original_ui_images':2,'main_code_directories_verified':directories,'main_code_pages_verified':code_slots,'main_special_slots_verified':special_slots,'resource_hashes_verified':resource_count,'nested_code_entries_not_independently_verified':nested,'entitlements_match_source':True,'runtime_verified':False,'scope':'Package provenance, main executable page/special hashes and resource hashes; device execution, certificate trust and current-game compatibility are outside this check'}
 args.output.write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
