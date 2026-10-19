@@ -46,7 +46,7 @@ std::optional<ts::Image> MachSession::findGameImage(std::string& error)const{
  // REA FUN_10002d908: inspect readable/executable mappings and prefer UnityFramework.
  for(unsigned count=0;count<65536;count++){
   vm_size_t size=0;vm_region_submap_info_data_64_t info{};mach_msg_type_number_t words=VM_REGION_SUBMAP_INFO_COUNT_64;
-  auto kr=vm_region_recurse(task_,&address,&size,&depth,reinterpret_cast<vm_region_recurse_info_t>(&info),&words);
+  auto kr=vm_region_recurse_64(task_,&address,&size,&depth,reinterpret_cast<vm_region_recurse_info_t>(&info),&words);
   if(kr==KERN_INVALID_ADDRESS)break;
   if(kr!=KERN_SUCCESS){error="内存区域枚举失败："+std::string(mach_error_string(kr));return {};}
   if(info.is_submap){if(depth>=64){error="内存映射嵌套超过限制";return {};}++depth;continue;}
@@ -70,7 +70,7 @@ std::vector<ts::Region> MachSession::regions(std::string& error)const{
  pid_t pid=0;pid_for_task(task_,&pid);vm_address_t address=0;natural_t depth=0;
  for(unsigned i=0;i<65536;i++){
   vm_size_t size=0;vm_region_submap_info_data_64_t info{};mach_msg_type_number_t words=VM_REGION_SUBMAP_INFO_COUNT_64;
-  auto kr=vm_region_recurse(task_,&address,&size,&depth,reinterpret_cast<vm_region_recurse_info_t>(&info),&words);
+  auto kr=vm_region_recurse_64(task_,&address,&size,&depth,reinterpret_cast<vm_region_recurse_info_t>(&info),&words);
   if(kr==KERN_INVALID_ADDRESS)break;if(kr!=KERN_SUCCESS){error=mach_error_string(kr);return {};}
   if(info.is_submap){if(depth>=64){error="内存区域嵌套过深";return {};}++depth;continue;}
   char path[4096]{};using RegionFilename=int(*)(int,uint64_t,void*,uint32_t);
