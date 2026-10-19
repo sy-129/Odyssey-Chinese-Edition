@@ -8,6 +8,8 @@ check:
 	$(CXX) $(CXXFLAGS) -ICore -c Core/GameData.cpp -o build/GameData.o
 	$(CXX) $(CXXFLAGS) -ICore Core/CoordinateAccess.cpp Tests/CoordinateTests.cpp -o build/coordinate-tests
 	./build/coordinate-tests
+	$(CXX) $(CXXFLAGS) -ICore Core/RemoteMemory.cpp Core/Geometry.cpp Core/GameData.cpp Tests/GameDataTests.cpp -o build/game-data-tests
+	./build/game-data-tests
 	$(CXX) $(CXXFLAGS) -ICore -IVendor/imgui Core/Geometry.cpp Core/ESPRenderer.cpp Tests/RendererTests.cpp Vendor/imgui/imgui.cpp Vendor/imgui/imgui_draw.cpp Vendor/imgui/imgui_tables.cpp Vendor/imgui/imgui_widgets.cpp -o build/renderer-tests
 	./build/renderer-tests
 clean:
