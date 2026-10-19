@@ -2,6 +2,8 @@ import Foundation
 import CryptoKit
 import Security
 
+fileprivate struct LicenseEnvelope: Codable { let payload: String; let signature: String; let refresh_token: String }
+
 public enum LicenseError: Error {
     case invalidConfiguration, serverRejected(Int), malformedReply, invalidSignature
     case wrongInstallation, expired, wrongChallenge, keychain(OSStatus)
@@ -66,22 +68,37 @@ public struct LicenseClient: Sendable {
         guard http.statusCode == 200 else { throw LicenseError.serverRejected(http.statusCode) }
         return try JSONDecoder().decode(Reply.self, from: bytes)
     }
+    fileprivate func refresh(device: String, token: String) async throws -> SignedLicense {
+        struct Body: Encodable { let device_id: String }
+        struct Challenge: Decodable { let nonce: String; let expires_at: Int64 }
+        struct Renewal: Encodable { let device_id: String; let refresh_token: String; let nonce: String }
+        let challenge: Challenge = try await post("v1/challenge", Body(device_id: device))
+        guard challenge.expires_at > Int64(Date().timeIntervalSince1970) else { throw LicenseError.expired }
+        let envelope: LicenseEnvelope = try await post("v1/refresh", Renewal(device_id: device, refresh_token: token, nonce: challenge.nonce))
+        guard let raw = Data(base64Encoded: envelope.payload), let signature = Data(base64Encoded: envelope.signature) else { throw LicenseError.malformedReply }
+        guard publicKey.isValidSignature(signature, for: raw) else { throw LicenseError.invalidSignature }
+        let license = try JSONDecoder().decode(SignedLicense.self, from: raw)
+        guard license.device_id == device else { throw LicenseError.wrongInstallation }
+        guard license.nonce == challenge.nonce else { throw LicenseError.wrongChallenge }
+        guard license.isCurrent else { throw LicenseError.expired }
+        try TSLicenseBridge.store(payload: envelope.payload, signature: envelope.signature, refreshToken: envelope.refresh_token, server: base.absoluteString)
+        return license
+    }
     public func activate(key: String) async throws -> SignedLicense {
         struct ChallengeBody: Encodable { let device_id: String }
         struct Challenge: Decodable { let nonce: String; let expires_at: Int64 }
         struct Activation: Encodable { let device_id: String; let license_key: String; let nonce: String }
-        struct Envelope: Decodable { let payload: String; let signature: String }
         let installation = try InstallationIdentity.load()
         let challenge: Challenge = try await post("v1/challenge", ChallengeBody(device_id: installation))
         guard challenge.expires_at > Int64(Date().timeIntervalSince1970) else { throw LicenseError.expired }
-        let envelope: Envelope = try await post("v1/activate", Activation(device_id: installation, license_key: key, nonce: challenge.nonce))
+        let envelope: LicenseEnvelope = try await post("v1/activate", Activation(device_id: installation, license_key: key, nonce: challenge.nonce))
         guard let raw = Data(base64Encoded: envelope.payload), let signature = Data(base64Encoded: envelope.signature) else { throw LicenseError.malformedReply }
         guard publicKey.isValidSignature(signature, for: raw) else { throw LicenseError.invalidSignature }
         let result = try JSONDecoder().decode(SignedLicense.self, from: raw)
         guard result.device_id == installation else { throw LicenseError.wrongInstallation }
         guard result.nonce == challenge.nonce else { throw LicenseError.wrongChallenge }
         guard result.isCurrent else { throw LicenseError.expired }
-        try TSLicenseBridge.store(payload: envelope.payload, signature: envelope.signature)
+        try TSLicenseBridge.store(payload: envelope.payload, signature: envelope.signature, refreshToken: envelope.refresh_token, server: base.absoluteString)
         return result
     }
 }
@@ -108,13 +125,39 @@ public final class TSLicenseBridge: NSObject {
             return license.isCurrent
         } catch { return false }
     }
-    fileprivate struct StoredLease: Codable { let payload: String; let signature: String }
-    fileprivate static func store(payload: String, signature: String) throws {
+    fileprivate struct StoredLease: Codable { let payload: String; let signature: String; let refresh_token: String; let server_url: String }
+    fileprivate static func store(payload: String, signature: String, refreshToken: String, server: String) throws {
         let directory = leaseURL.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                                                attributes: [.posixPermissions: 0o700])
-        try JSONEncoder().encode(StoredLease(payload: payload, signature: signature)).write(to: leaseURL, options: .atomic)
-        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: leaseURL.path)
+        try JSONEncoder().encode(StoredLease(payload: payload, signature: signature, refresh_token: refreshToken, server_url: server)).write(to: leaseURL, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600, .ownerAccountID: 501], ofItemAtPath: leaseURL.path)
+    }
+    private static let renewalQueue = DispatchQueue(label: "local.trollspeed.lease-renewal")
+    private static var renewing = false
+    @objc public static func renewIfNeeded() {
+        let begin = renewalQueue.sync { () -> Bool in
+            if renewing { return false }
+            renewing = true
+            return true
+        }
+        guard begin else { return }
+        Task {
+            defer { renewalQueue.sync { renewing = false } }
+            do {
+                let stored = try JSONDecoder().decode(StoredLease.self, from: Data(contentsOf: leaseURL))
+                guard let raw = Data(base64Encoded: stored.payload) else { return }
+                let lease = try JSONDecoder().decode(SignedLicense.self, from: raw)
+                // Renew before expiry; the new envelope still has to pass the pinned-key signature checks.
+                guard lease.expires_at - Int64(Date().timeIntervalSince1970) < 300 else { return }
+                guard let url = URL(string: stored.server_url),
+                      let configURL = Bundle.main.url(forResource: "public-config", withExtension: "json"),
+                      let config = try JSONSerialization.jsonObject(with: Data(contentsOf: configURL)) as? [String: Any],
+                      let publicKey = config["public_key_base64"] as? String else { return }
+                let client = try LicenseClient(baseURL: url, publicKeyBase64: publicKey)
+                _ = try await client.refresh(device: lease.device_id, token: stored.refresh_token)
+            } catch { NSLog("License renewal failed: %@", String(describing: error)) }
+        }
     }
     @objc public static func activate(_ server: String, key: String, completion: @escaping (Bool, String) -> Void) {
         Task {
