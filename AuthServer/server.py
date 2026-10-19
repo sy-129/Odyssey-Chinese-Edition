@@ -19,6 +19,8 @@ def database():
  try:yield db;db.commit()
  except Exception:db.rollback();raise
  finally:db.close()
+with database() as db:
+ db.execute('CREATE TABLE IF NOT EXISTS refresh_tokens(token_hash TEXT PRIMARY KEY,license_id TEXT NOT NULL,device TEXT NOT NULL,expires INTEGER NOT NULL)')
 def digest(s):return hashlib.sha256(s.encode()).hexdigest()
 def now():return int(time.time())
 lock=threading.Lock();rates=defaultdict(deque)
@@ -46,6 +48,16 @@ class Challenge(BaseModel):device_id:str=Field(min_length=16,max_length=128,patt
 class Activate(Challenge):
  license_key:str=Field(min_length=16,max_length=160)
  nonce:str=Field(min_length=16,max_length=128)
+class Refresh(Challenge):
+ refresh_token:str=Field(min_length=16,max_length=160)
+ nonce:str=Field(min_length=16,max_length=128)
+def signed_lease(db,row,device,nonce):
+ token=secrets.token_urlsafe(48)
+ db.execute('DELETE FROM refresh_tokens WHERE license_id=? OR expires<=?',(row['id'],now()))
+ db.execute('INSERT INTO refresh_tokens VALUES(?,?,?,?)',(digest(token),row['id'],device,row['expires']))
+ t=now();payload={'version':1,'license_id':row['id'],'device_id':device,'issued_at':t,'expires_at':min(t+600,row['expires']),'nonce':nonce,'scope':'trollspeed-rebuild'}
+ raw=json.dumps(payload,separators=(',',':'),sort_keys=True).encode()
+ return {'payload':base64.b64encode(raw).decode(),'signature':base64.b64encode(ISSUER.sign(raw)).decode(),'refresh_token':token}
 @app.post('/admin/login')
 def login(body:Login,request:Request):
  limit(request,'login',10)
@@ -88,9 +100,22 @@ def activate(body:Activate,request:Request):
   if not proof or proof['expires']<=now() or proof['device']!=body.device_id:raise HTTPException(403,'Invalid or expired challenge')
   if row['device'] and row['device']!=body.device_id:raise HTTPException(403,'License is bound to another installation')
   db.execute('DELETE FROM challenges WHERE nonce_hash=?',(digest(body.nonce),));db.execute('UPDATE licenses SET device=? WHERE id=?',(body.device_id,row['id']))
-  t=now();payload={'version':1,'license_id':row['id'],'device_id':body.device_id,'issued_at':t,'expires_at':min(t+600,row['expires']),'nonce':body.nonce,'scope':'trollspeed-rebuild'}
- raw=json.dumps(payload,separators=(',',':'),sort_keys=True).encode();signature=ISSUER.sign(raw)
- return {'payload':base64.b64encode(raw).decode(),'signature':base64.b64encode(signature).decode()}
+  envelope=signed_lease(db,row,body.device_id,body.nonce)
+ return envelope
+@app.post('/v1/refresh')
+def refresh(body:Refresh,request:Request):
+ limit(request,'refresh',30)
+ with database() as db:
+  db.execute('BEGIN IMMEDIATE')
+  stored=db.execute('SELECT * FROM refresh_tokens WHERE token_hash=?',(digest(body.refresh_token),)).fetchone()
+  if not stored or stored['expires']<=now() or stored['device']!=body.device_id:raise HTTPException(403,'Invalid refresh token')
+  row=db.execute('SELECT * FROM licenses WHERE id=?',(stored['license_id'],)).fetchone()
+  proof=db.execute('SELECT * FROM challenges WHERE nonce_hash=?',(digest(body.nonce),)).fetchone()
+  if not row or row['revoked'] or row['expires']<=now() or row['device']!=body.device_id:raise HTTPException(403,'License is invalid, expired, or revoked')
+  if not proof or proof['expires']<=now() or proof['device']!=body.device_id:raise HTTPException(403,'Invalid or expired challenge')
+  db.execute('DELETE FROM challenges WHERE nonce_hash=?',(digest(body.nonce),))
+  envelope=signed_lease(db,row,body.device_id,body.nonce)
+ return envelope
 @app.get('/health')
 def health():return {'status':'ok','product':'trollspeed-rebuild'}
 
