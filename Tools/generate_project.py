@@ -22,7 +22,7 @@ resources=[]
 for path,kind in [('Resources/wztx','folder'),('Resources/OriginalOffsets.json','text.json'),('AuthClient/public-config.json','text.json')]:
  ref=obj(path,'PBXFileReference',lastKnownFileType=kind,path=path,sourceTree='<group>');refs.append(ref);resources.append(obj('resource:'+path,'PBXBuildFile',fileRef=ref))
 frameworks=[]
-for name in ['UIKit','Foundation','Metal','MetalKit','QuartzCore','Security']:
+for name in ['UIKit','Foundation','Metal','MetalKit','QuartzCore','CoreGraphics','Security']:
  ref=obj('framework:'+name,'PBXFileReference',lastKnownFileType='wrapper.framework',path=f'System/Library/Frameworks/{name}.framework',sourceTree='SDKROOT');refs.append(ref);frameworks.append(obj('link:'+name,'PBXBuildFile',fileRef=ref))
 product=obj('product','PBXFileReference',explicitFileType='wrapper.application',path='TrollSpeedRebuild.app',sourceTree='BUILT_PRODUCTS_DIR')
 products=obj('products','PBXGroup',name='Products',children=[product],sourceTree='<group>')
