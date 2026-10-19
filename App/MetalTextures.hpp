@@ -3,10 +3,13 @@
 #include "ESPRenderer.hpp"
 #include <map>
 class MetalTextures:public ts::Textures {
- id<MTLDevice> device_;std::map<int,id<MTLTexture>> heroes_,skills_;id<MTLTexture> fallback_;
- id<MTLTexture> load(int,bool);
+ id<MTLDevice> device_;std::map<int,id<MTLTexture>> heroes_;std::map<std::pair<int,int>,id<MTLTexture>> skills_;id<MTLTexture> fallback_;
+ id<MTLTexture> loadImage(int,bool);
+ id<MTLTexture> loadHero(int);
+ id<MTLTexture> loadSkill(int,int);
 public:
  explicit MetalTextures(id<MTLDevice>);
- ImTextureID hero(int id)override{return (__bridge void*)load(id,true);}
- ImTextureID skill(int id)override{return (__bridge void*)load(id,false);}
+ ImTextureID hero(int assetID)override{return (__bridge void*)loadHero(assetID);}
+ ImTextureID skill(int assetID,int alternate=0)override{return (__bridge void*)loadSkill(assetID,alternate);}
+ bool isFallback(ImTextureID value)const override{return value==(__bridge void*)fallback_;}
 };
