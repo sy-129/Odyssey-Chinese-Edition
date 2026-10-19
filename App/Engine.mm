@@ -16,10 +16,11 @@ void Engine::run(){
    if(pid<1||!session.attach(pid,error)){status(error);for(int i=0;i<20&&running_;i++)std::this_thread::sleep_for(std::chrono::milliseconds(50));continue;}
    auto image=session.findGameImage(error);if(!image){status(error);std::this_thread::sleep_for(std::chrono::milliseconds(250));continue;}
    ts::Offsets offsets;ts::CoordinateAccess coordinates(session,offsets);ts::GameReader reader(session,offsets,image->address,pid);
-   double nextCoordinates=0,nextAuthorization=0;bool coordinateReady=false;
+   double nextCoordinates=0,nextAuthorization=0,nextRenewal=0;bool coordinateReady=false;
    while(running_){
     @autoreleasepool {
      double time=now();
+     if(time>=nextRenewal){nextRenewal=time+30;[TSLicenseBridge renewIfNeeded];}
      if(time>=nextAuthorization){nextAuthorization=time+1;if(![TSLicenseBridge hasValidLease]){status("授权已到期，请返回应用续期");running_=false;break;}}
      if(time>=nextCoordinates){nextCoordinates=time+3;error.clear();auto regions=session.regions(error);
       if(!error.empty()){status(error);break;}
