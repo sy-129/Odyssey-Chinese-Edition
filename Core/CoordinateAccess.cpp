@@ -24,20 +24,26 @@ bool CoordinateAccess::readRecord(std::uint64_t object,VMRecord& result)const{
  result.code=pointer(result.bytecodeObject,offsets_.tsBcObjDataOff);if(result.code<0x100000000ULL||!add(result.code,*length))return false;
  result.length=*length;result.nop=*nop;result.store=*store;result.invalid=*invalid;return true;
 }
+std::uint32_t CoordinateAccess::requiredMask(std::uint32_t length)const{
+ std::uint32_t mask=0;for(unsigned i=0;i<offsets_.tsCoordCount;i++)if(std::uint64_t(pcs_[i])+3<length)mask|=std::uint32_t(1)<<i;return mask;
+}
 bool CoordinateAccess::patchRecord(VMRecord& record){
  std::vector<std::uint8_t> code(record.length);auto read=memory_.read(record.code,code.data(),code.size());if(!read.success||read.copied!=code.size())return false;
  std::array<std::uint8_t,4> replacement{record.nop,record.nop,record.nop,record.nop};
  for(unsigned i=0;i<offsets_.tsCoordCount;i++){
-  auto pc=pcs_[i];if(std::uint64_t(pc)+3>=record.length||code[pc]!=record.store)continue;
+  auto pc=pcs_[i];if(std::uint64_t(pc)+3>=record.length)continue;
+  if(std::equal(replacement.begin(),replacement.end(),code.begin()+pc)){record.existingMask|=std::uint32_t(1)<<i;continue;}
+  if(code[pc]!=record.store)continue;
   auto address=add(record.code,pc);if(!address||!memory_.write(*address,replacement.data(),replacement.size()))continue;
   auto actual=memory_.value<std::array<std::uint8_t,4>>(*address);if(!actual||*actual!=replacement)continue;
   ++record.patched;record.matchedMask|=std::uint32_t(1)<<i;
  }
- return record.patched>0;
+ auto required=requiredMask(record.length);return record.patched>0||(required&&record.existingMask==required);
 }
 bool CoordinateAccess::verify(const VMRecord& record)const{
- VMRecord live;if(!readRecord(record.object,live)||live.code!=record.code||live.length!=record.length||record.patched==0||record.matchedMask==0)return false;
- for(unsigned i=0;i<offsets_.tsCoordCount;i++)if(record.matchedMask&(std::uint32_t(1)<<i)){
+ const auto fullMask=requiredMask(record.length);
+ VMRecord live;if(!readRecord(record.object,live)||live.code!=record.code||live.length!=record.length||(record.matchedMask==0&&(!fullMask||record.existingMask!=fullMask)))return false;
+ for(unsigned i=0;i<offsets_.tsCoordCount;i++)if((record.matchedMask|record.existingMask)&(std::uint32_t(1)<<i)){
   if(std::uint64_t(pcs_[i])+3>=live.length)return false;
   auto value=field<std::array<std::uint8_t,4>>(live.code,pcs_[i]);
   if(!value||*value!=std::array<std::uint8_t,4>{live.nop,live.nop,live.nop,live.nop})return false;
@@ -76,6 +82,6 @@ CoordinateResult CoordinateAccess::initialize(const std::vector<Region>& regions
   }
  }
  for(const auto& record:result.records)if(verify(record)){result.success=true;cache_.push_back(record);}
- result.reason=result.success?"坐标初始化已写入并读回确认":"未找到可完成坐标初始化的有效字节码对象";return result;
+ result.reason=result.success?(result.patched?"坐标初始化已写入并读回确认":"已读回确认全部既有坐标初始化位置"):"未找到可完成坐标初始化的有效字节码对象";return result;
 }
 }

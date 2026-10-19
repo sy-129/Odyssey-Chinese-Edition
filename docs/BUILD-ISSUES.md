@@ -75,3 +75,11 @@
 - Where: App/HUDController.mm; comparison with original ImGuiDraw::draw (0x100014f74) and renderImGuiMenu's copy of enableESP to DAT_100418c70.
 - Repro: disable ESP while a valid frame contains visible heroes; the old caller still emitted world boxes and skill icons.
 - Correction: restore the caller's master gate and require a nonzero valid-frame timestamp before rendering. Menu interaction remains available.
+
+## Fresh HUD after coordinate bytes were already initialized
+
+- Expected: restarting the HUD while the same game process remains alive recognizes completed initialization.
+- What happened: fresh scanning found no STORE bytes and reported failure although the configured locations already contained NOPs.
+- Where: Core/CoordinateAccess.cpp; the original single-candidate routine also returns zero newly written locations for this input.
+- Repro: initialize all nine fixture locations, create a new CoordinateAccess instance, then scan again.
+- Correction: separately track preexisting four-byte NOP locations and accept a fresh already-initialized candidate only for a complete configured mask with valid metadata. A single partial NOP match remains insufficient. Twelve coordinate checks pass, including a shorter code buffer where only in-bounds configured locations apply.

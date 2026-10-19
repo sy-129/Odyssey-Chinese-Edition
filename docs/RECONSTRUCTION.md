@@ -11,7 +11,7 @@ The original has Mach task access, a persona-spawned HUD, private system window 
 ## Checked locally
 
 - 25 memory/Mach-O parser and geometry checks.
-- 9 coordinate discovery, retry, memory-fault and full nine-PC profile checks.
+- 12 coordinate discovery, retry, memory-fault, full nine-PC profile and fresh-HUD restart checks.
 - 11 data pointer-graph checks, including original visible skill-slot numbering, non-finite matrix rejection and match-cache reset.
 - Real Dear ImGui populated/empty-frame geometry emission checks.
 - 800 numerical comparisons of the original isolated ARM64 projection/minimap routines with the rewritten C++ routines; exact finite-case agreement in recorded runs.
@@ -60,3 +60,5 @@ HUD numeric controls use bounded touch-drag widgets rather than relying on an un
 Task lookup, kernel memory I/O and vector allocation/deallocation are controlled boundaries. The original validator and patching instructions execute unchanged. This checks the candidate routine, not original region discovery, real game layout or iOS task permissions. Both this comparison and the 800-case geometry comparison now run in GitHub Actions and preserve JSON evidence.
 
 Further drawing comparison corrected side-skill outlines/overlay opacity, the world recall badge's local rectangle and font scaling, the no-hero top-panel layout, and the app-level ESP master switch/data-ready gate recovered from original 0x100014f74 and renderImGuiMenu.
+
+A fresh HUD can now recognize a fully initialized candidate only when all configured locations within the validated bytecode length contain four NOP bytes and the original module/object/state checks pass. A partial preexisting match is rejected. The original candidate routine still returns zero new writes in the all-NOP case; the C++ higher-level readiness recognition is an intentional restart repair and is tested separately from the byte-for-byte write-count/mask comparison.

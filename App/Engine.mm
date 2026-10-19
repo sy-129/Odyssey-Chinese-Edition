@@ -36,7 +36,7 @@ void Engine::run(){
      if(time>=nextAuthorization){nextAuthorization=time+1;if(![TSLicenseBridge hasValidLease]){status("授权已到期，请返回应用续期");running_=false;break;}}
      if(time>=nextCoordinates){nextCoordinates=time+3;if(!coordinateReady)status("正在查找并验证坐标对象");error.clear();auto regions=session.regions(error);
       if(!error.empty()){{std::lock_guard<std::mutex> guard(mutex_);frame_={};}status(error);break;}
-      auto result=coordinates.initialize(regions);coordinateReady=result.success;coordinatesVerified_=result.success;confirmedLocations_=0;for(const auto& record:result.records)confirmedLocations_+=record.patched;
+      auto result=coordinates.initialize(regions);coordinateReady=result.success;coordinatesVerified_=result.success;confirmedLocations_=0;for(const auto& record:result.records)confirmedLocations_+=__builtin_popcount(record.matchedMask|record.existingMask);
       if(!coordinateReady){std::lock_guard<std::mutex> guard(mutex_);frame_={};}
       status(result.reason);
      }

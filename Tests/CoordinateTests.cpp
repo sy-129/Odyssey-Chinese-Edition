@@ -50,5 +50,11 @@ int main(){
  require(complete.success&&complete.patched==9,"all nine configured PCs must be patched and read back");
  require(complete.records.size()==1&&complete.records[0].matchedMask==0x1ff,"every configured opcode contributes to the verified mask");
  require(configured.memory.bytes[0x8000+100]==original.tsOpcodeStoreValue,"unconfigured STORE bytes must remain unchanged");
- std::cout<<"9 coordinate memory fault/retry/profile checks passed\n";
+ ts::CoordinateAccess restarted(configured.memory,configured.offsets);auto recognized=restarted.initialize(configured.regions);
+ require(recognized.success&&recognized.patched==0&&recognized.records[0].existingMask==0x1ff,"restarted HUD recognizes every already-initialized PC without new writes");
+ configured.memory.set<std::uint32_t>(0x4000+original.tsStateCodeLenOff,10000);ts::CoordinateAccess shortRestart(configured.memory,configured.offsets);auto recognizedShort=shortRestart.initialize(configured.regions);
+ require(recognizedShort.success&&recognizedShort.patched==0&&recognizedShort.records[0].existingMask==7,"shorter bytecode requires every in-bounds configured PC and ignores out-of-bounds PCs");
+ Fixture partial;partial.memory.set<std::uint32_t>(0x8000+100,0x21212121);partial.memory.set<std::uint32_t>(0x8000+200,0);
+ ts::CoordinateAccess partialAccess(partial.memory,partial.offsets);require(!partialAccess.initialize(partial.regions).success,"one preexisting NOP location cannot establish initialization");
+ std::cout<<"12 coordinate memory fault/retry/profile checks passed\n";
 }
