@@ -38,3 +38,11 @@ A floating ImGui control, three settings groups, dragging and hit-region pass-th
 Five headless interaction/settings-validation checks pass. This establishes menu state logic, not actual iOS HID delivery or exact original menu appearance. The original floating-control JPEG and app icon are now restored from the hash-checked archive; exact dimensions and visual parity still need device comparison.
 
 All 58 settings getters were recovered after correcting decimal-offset parsing for heroBoxColorR at original field +100. UI and storage include that field. Application/keychain identifiers were explicitly added for the new client's own Keychain item; TrollStore's official entitlement example uses an unprefixed application-identifier. Keychain behavior still needs real-device verification.
+
+## Rotation and screen lock
+
+Original 0x10000992c / 0x10000ad58 observe FBS orientation changes and rotate the HUD view by +pi/2 for orientation 3 and -pi/2 for 4, coercing portrait updates to 3. A portrait-only UIKit window with a manually rotated landscape drawing view is now implemented to follow that behavior. The direct AX touch coordinates are converted through the transformed view. The original lock-state notification and screen-lock query are also restored. These private APIs require device validation; successful SDK linking does not exercise them.
+
+## Skill texture fallback
+
+The original instruction at 0x100032664 loads integer 0xd903 (55555) for the final bundled skill fallback, and the constant integer object at 0x100332fd8 contains the same value. The supplied archive includes wztx/55555.png. Missing primary/alternate skills now use this asset before falling back to the generated red disc. The original remappings 80116→80104 and 80117→80118 remain intact.

@@ -15,6 +15,8 @@ id<MTLTexture> MetalTextures::loadHero(int assetID){
 id<MTLTexture> MetalTextures::loadSkill(int assetID,int alternate){
  auto key=std::make_pair(assetID,alternate);auto found=skills_.find(key);if(found!=skills_.end())return found->second;
  auto image=loadImage(assetID,false);if(!image&&alternate>0)image=loadImage(alternate,false);
+ // Original 0x100032664 uses bundled 55555.png before the generated red-disc fallback.
+ if(!image)image=loadImage(55555,false);
  return skills_[key]=image?:fallback_;
 }
 id<MTLTexture> MetalTextures::loadImage(int assetID,bool portrait){
