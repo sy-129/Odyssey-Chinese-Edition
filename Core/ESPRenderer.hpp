@@ -7,7 +7,8 @@ class Textures {
 public:
  virtual ~Textures()=default;
  virtual ImTextureID hero(int id)=0;
- virtual ImTextureID skill(int id)=0;
+ virtual ImTextureID skill(int id,int alternate=0)=0;
+ virtual bool isFallback(ImTextureID)const{return false;}
 };
 class ESPRenderer {
  Textures& textures_;
