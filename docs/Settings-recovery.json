@@ -1,0 +1,401 @@
+[
+  {
+    "type": "bool",
+    "name": "enableESP",
+    "offset": 16,
+    "default": true,
+    "address": "0x100030b0c"
+  },
+  {
+    "type": "bool",
+    "name": "showHeroBox",
+    "offset": 17,
+    "default": true,
+    "address": "0x100030b1c"
+  },
+  {
+    "type": "bool",
+    "name": "showHeroHP",
+    "offset": 18,
+    "default": true,
+    "address": "0x100030b2c"
+  },
+  {
+    "type": "bool",
+    "name": "showHeroID",
+    "offset": 19,
+    "default": true,
+    "address": "0x100030b3c"
+  },
+  {
+    "type": "bool",
+    "name": "showMiniMap",
+    "offset": 20,
+    "default": true,
+    "address": "0x100030b4c"
+  },
+  {
+    "type": "bool",
+    "name": "showAvatar",
+    "offset": 21,
+    "default": true,
+    "address": "0x100030b5c"
+  },
+  {
+    "type": "bool",
+    "name": "showBoxAvatar",
+    "offset": 22,
+    "default": true,
+    "address": "0x100030b6c"
+  },
+  {
+    "type": "bool",
+    "name": "showMiniMapFrame",
+    "offset": 23,
+    "default": true,
+    "address": "0x100030b7c"
+  },
+  {
+    "type": "float",
+    "name": "miniMapX",
+    "offset": 36,
+    "default": 117.0,
+    "address": "0x100030b8c"
+  },
+  {
+    "type": "float",
+    "name": "miniMapY",
+    "offset": 40,
+    "default": 12.0,
+    "address": "0x100030b9c"
+  },
+  {
+    "type": "float",
+    "name": "miniMapSize",
+    "offset": 44,
+    "default": 390.0,
+    "address": "0x100030bac"
+  },
+  {
+    "type": "float",
+    "name": "miniMapWidth",
+    "offset": 48,
+    "default": 387.0,
+    "address": "0x100030bbc"
+  },
+  {
+    "type": "float",
+    "name": "miniMapHeight",
+    "offset": 52,
+    "default": 392.0,
+    "address": "0x100030bcc"
+  },
+  {
+    "type": "float",
+    "name": "miniMapAvatarScale",
+    "offset": 56,
+    "default": 2.3499999046325684,
+    "address": "0x100030bdc"
+  },
+  {
+    "type": "float",
+    "name": "bigMapScale",
+    "offset": 60,
+    "default": 2.0,
+    "address": "0x100030bec"
+  },
+  {
+    "type": "float",
+    "name": "minionPointSize",
+    "offset": 64,
+    "default": 5.599999904632568,
+    "address": "0x100030bfc"
+  },
+  {
+    "type": "float",
+    "name": "monsterPointSize",
+    "offset": 68,
+    "default": 6.300000190734863,
+    "address": "0x100030c0c"
+  },
+  {
+    "type": "float",
+    "name": "monsterTimerFontSize",
+    "offset": 72,
+    "default": 28.299999237060547,
+    "address": "0x100030c1c"
+  },
+  {
+    "type": "float",
+    "name": "miniMapRecallLabelFontSize",
+    "offset": 76,
+    "default": 54.599998474121094,
+    "address": "0x100030c2c"
+  },
+  {
+    "type": "float",
+    "name": "miniMapRecallTimerFontSize",
+    "offset": 80,
+    "default": 54.599998474121094,
+    "address": "0x100030c3c"
+  },
+  {
+    "type": "float",
+    "name": "heroBoxThickness",
+    "offset": 84,
+    "default": 6.599999904632568,
+    "address": "0x100030c4c"
+  },
+  {
+    "type": "float",
+    "name": "heroHPBarThickness",
+    "offset": 88,
+    "default": 5.800000190734863,
+    "address": "0x100030c5c"
+  },
+  {
+    "type": "float",
+    "name": "boxUltimateCdFontSize",
+    "offset": 92,
+    "default": 25.700000762939453,
+    "address": "0x100030c6c"
+  },
+  {
+    "type": "float",
+    "name": "boxSkillCdFontSize",
+    "offset": 96,
+    "default": 33.79999923706055,
+    "address": "0x100030c7c"
+  },
+  {
+    "type": "float",
+    "name": "heroBoxColorG",
+    "offset": 104,
+    "default": 255.0,
+    "address": "0x100030c9c"
+  },
+  {
+    "type": "float",
+    "name": "heroBoxColorB",
+    "offset": 108,
+    "default": 255.0,
+    "address": "0x100030cac"
+  },
+  {
+    "type": "float",
+    "name": "heroScaleX",
+    "offset": 112,
+    "default": 101.80000305175781,
+    "address": "0x100030cbc"
+  },
+  {
+    "type": "float",
+    "name": "heroScaleY",
+    "offset": 116,
+    "default": 101.80000305175781,
+    "address": "0x100030ccc"
+  },
+  {
+    "type": "float",
+    "name": "monsterScaleX",
+    "offset": 120,
+    "default": 101.80000305175781,
+    "address": "0x100030cdc"
+  },
+  {
+    "type": "float",
+    "name": "monsterScaleY",
+    "offset": 124,
+    "default": 101.80000305175781,
+    "address": "0x100030cec"
+  },
+  {
+    "type": "bool",
+    "name": "showMonster",
+    "offset": 24,
+    "default": true,
+    "address": "0x100030cfc"
+  },
+  {
+    "type": "bool",
+    "name": "showMonsterHP",
+    "offset": 25,
+    "default": false,
+    "address": "0x100030d0c"
+  },
+  {
+    "type": "bool",
+    "name": "showMonsterTimer",
+    "offset": 26,
+    "default": true,
+    "address": "0x100030d1c"
+  },
+  {
+    "type": "bool",
+    "name": "showMinion",
+    "offset": 27,
+    "default": true,
+    "address": "0x100030d2c"
+  },
+  {
+    "type": "bool",
+    "name": "showSkillCD",
+    "offset": 28,
+    "default": true,
+    "address": "0x100030d3c"
+  },
+  {
+    "type": "bool",
+    "name": "showRecall",
+    "offset": 29,
+    "default": true,
+    "address": "0x100030d4c"
+  },
+  {
+    "type": "float",
+    "name": "recallLabelFontSize",
+    "offset": 128,
+    "default": 54.599998474121094,
+    "address": "0x100030d5c"
+  },
+  {
+    "type": "float",
+    "name": "recallTimerFontSize",
+    "offset": 132,
+    "default": 54.599998474121094,
+    "address": "0x100030d6c"
+  },
+  {
+    "type": "bool",
+    "name": "showTopSkillPanel",
+    "offset": 30,
+    "default": true,
+    "address": "0x100030d7c"
+  },
+  {
+    "type": "bool",
+    "name": "showTopSkillPanelRecall",
+    "offset": 31,
+    "default": true,
+    "address": "0x100030d8c"
+  },
+  {
+    "type": "float",
+    "name": "topSkillPanelX",
+    "offset": 136,
+    "default": 1106.0,
+    "address": "0x100030d9c"
+  },
+  {
+    "type": "float",
+    "name": "topSkillPanelY",
+    "offset": 140,
+    "default": -107.0,
+    "address": "0x100030dac"
+  },
+  {
+    "type": "float",
+    "name": "topSkillPanelScale",
+    "offset": 144,
+    "default": 3.6600000858306885,
+    "address": "0x100030dbc"
+  },
+  {
+    "type": "float",
+    "name": "topSkillPanelAvatarSkillGap",
+    "offset": 148,
+    "default": 10.600000381469727,
+    "address": "0x100030dcc"
+  },
+  {
+    "type": "float",
+    "name": "topPanelUltimateCdFontSize",
+    "offset": 152,
+    "default": 50.29999923706055,
+    "address": "0x100030ddc"
+  },
+  {
+    "type": "float",
+    "name": "topPanelSkillCdFontSize",
+    "offset": 156,
+    "default": 43.400001525878906,
+    "address": "0x100030dec"
+  },
+  {
+    "type": "int",
+    "name": "frameRate",
+    "offset": 160,
+    "default": 120,
+    "address": "0x100030dfc"
+  },
+  {
+    "type": "bool",
+    "name": "hideAtSnapshot",
+    "offset": 32,
+    "default": true,
+    "address": "0x100030e0c"
+  },
+  {
+    "type": "float",
+    "name": "menuRightContentFontScale",
+    "offset": 164,
+    "default": 1.0199999809265137,
+    "address": "0x100030e1c"
+  },
+  {
+    "type": "float",
+    "name": "menuLeftNavFontScale",
+    "offset": 168,
+    "default": 0.9200000166893005,
+    "address": "0x100030e2c"
+  },
+  {
+    "type": "float",
+    "name": "menuFontColorR",
+    "offset": 172,
+    "default": 116.0,
+    "address": "0x100030e3c"
+  },
+  {
+    "type": "float",
+    "name": "menuFontColorG",
+    "offset": 176,
+    "default": 255.0,
+    "address": "0x100030e4c"
+  },
+  {
+    "type": "float",
+    "name": "menuFontColorB",
+    "offset": 180,
+    "default": 164.0,
+    "address": "0x100030e5c"
+  },
+  {
+    "type": "float",
+    "name": "menuBackgroundColorR",
+    "offset": 184,
+    "default": 16.0,
+    "address": "0x100030e6c"
+  },
+  {
+    "type": "float",
+    "name": "menuBackgroundColorG",
+    "offset": 188,
+    "default": 21.0,
+    "address": "0x100030e7c"
+  },
+  {
+    "type": "float",
+    "name": "menuBackgroundColorB",
+    "offset": 192,
+    "default": 27.0,
+    "address": "0x100030e8c"
+  },
+  {
+    "type": "float",
+    "name": "floatingBallScale",
+    "offset": 196,
+    "default": 1.0,
+    "address": "0x100030e9c"
+  }
+]
