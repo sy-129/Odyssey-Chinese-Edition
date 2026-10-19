@@ -64,8 +64,16 @@ void ESPRenderer::draw(ImDrawList* d,const Frame& frame,const Settings& s,Vec2 v
    if(s.showRecall&&h.recalling){
     char seconds[24];std::snprintf(seconds,sizeof seconds,"%.1f",h.recallSeconds);
     float font=bounded(s.miniMapRecallTimerFontSize,6,78);
-    text(d,{p.x,p.y-side*.5f-font-3},font,seconds,0xff48b8ff);
-    text(d,{p.x,p.y+side*.5f+3},bounded(s.miniMapRecallLabelFontSize,6,78),"回城",0xff48b8ff);
+    auto extent=ImGui::GetFont()->CalcTextSizeA(font,1e9f,0,seconds);
+    float px=std::max(font*.42f,4.f),py=std::max(font*.22f,2.f),centerY=p.y-side*.86f;
+    Vec2 a{p.x-extent.x*.5f-px,centerY-extent.y*.5f-py},b{p.x+extent.x*.5f+px,centerY+extent.y*.5f+py};
+    float radius=(b.y-a.y)*.48f;
+    d->AddRectFilled(v(a),v(b),0xe4120e0a,radius);
+    d->AddRectFilled(v(a),{b.x,a.y+(b.y-a.y)*.44f},0x5648b8ff,radius);
+    d->AddRect(v(a),v(b),0xf048b8ff,radius,0,1.2f);
+    text(d,{p.x,a.y+((b.y-a.y)-font)*.5f-font*.06f},font,seconds,0xffffffff);
+    float label=bounded(s.miniMapRecallLabelFontSize,6,78);
+    text(d,{p.x,p.y+side*.63f-label*.5f},label,"回城",0xff48b8ff);
    }
   }
   Vec2 screen;if(!toScreen(viewport,h.position,frame.matrix,screen))continue;
@@ -78,7 +86,7 @@ void ESPRenderer::draw(ImDrawList* d,const Frame& frame,const Settings& s,Vec2 v
    if(s.showRecall&&h.recalling){
     float side=bounded(std::min({65*scale*.62f,100*scale*.42f,s.recallLabelFontSize}),8,60);
     Vec2 ra{screen.x-side*.5f,(a.y+b.y-side)*.5f},rb{ra.x+side,ra.y+side};
-    auto recall=textures_.skill(99999);if(recall)d->AddImage(recall,v(ra),v(rb));else text(d,{screen.x,ra.y},side,"回城",0xff48b8ff);
+    auto recall=textures_.skill(99999);if(recall&&!textures_.isFallback(recall))d->AddImage(recall,v(ra),v(rb));else text(d,{screen.x,ra.y},side,"回城",0xff48b8ff);
     recallBorder(d,ra,rb,1.5f,4);timer(d,a,b,h.recallSeconds,bounded(s.recallTimerFontSize,6,78));
    }
   }
@@ -86,7 +94,7 @@ void ESPRenderer::draw(ImDrawList* d,const Frame& frame,const Settings& s,Vec2 v
   if(s.showBoxAvatar){Vec2 p{screen.x-side*.5f,a.y-side+3*scale};if(portrait)d->AddImage(portrait,v(p),{p.x+side,p.y+side});d->AddRect(v(p),{p.x+side,p.y+side},0xebffffff,std::max(2.f,4*scale),0,std::max(1.f,scale));}
   if(s.showBoxAvatar||s.showSkillCD){
    int count=s.showSkillCD?4:3;float gap=7*scale,y=(a.y+b.y-count*side-(count-1)*gap)*.5f;
-   if(s.showSkillCD){icon(d,textures_.skill(h.summonerID),{b.x+9*scale,y},side,h.summonerCD,std::max(8.f,bounded(s.boxSkillCdFontSize,6,52)*scale*.92f),h.ready[3]);y+=side+gap;}
+   if(s.showSkillCD){icon(d,textures_.skill(h.summonerID,h.alternateSummonerID),{b.x+9*scale,y},side,h.summonerCD,std::max(8.f,bounded(s.boxSkillCdFontSize,6,52)*scale*.92f),true);y+=side+gap;}
    int cds[]={h.skill0CD,h.skill1CD,h.ultimateCD};
    for(int i=0;i<3;i++,y+=side+gap)icon(d,textures_.skill(h.id*100+(i+1)*10),{b.x+9*scale,y},side,cds[i],std::max(8.f,bounded(i==2?s.boxUltimateCdFontSize:s.boxSkillCdFontSize,6,52)*scale*.92f),h.ready[i]);
   }
@@ -104,13 +112,19 @@ void ESPRenderer::draw(ImDrawList* d,const Frame& frame,const Settings& s,Vec2 v
   float width=side*5+12*scale*4+8*scale,height=side+gap+tiny+8*scale+(recall?tiny+rgap:0);
   float x=bounded(s.topSkillPanelX,6,std::max(6.f,viewport.x-width-6)),y=bounded(s.topSkillPanelY,6,std::max(6.f,viewport.y-height-6));
   int index=0;for(const auto& h:frame.heroes){if(h.dead)continue;if(index==5)break;
-   float left=x+4*scale+index*(side+12*scale),top=y+4*scale;
+   float left=x+index*(side+12*scale),top=y;
    icon(d,textures_.hero(h.id),{left,top},side,0,0,true);
-   d->AddRect({left,top},{left+side,top+side},0xebffffff,2*scale);
+   d->AddRect({left,top},{left+side,top+side},0xebaad6e8,std::max(2.f,5*scale),0,std::max(1.2f,1.1f*scale));
    float font=std::max(7.f,std::min(bounded(s.topPanelSkillCdFontSize,6,52)*scale,tiny*.6f));
-   icon(d,textures_.skill(h.summonerID),{left,top+side+gap},tiny,h.summonerCD,font,h.ready[3]);
-   icon(d,nullptr,{left+tiny+3*scale,top+side+gap},tiny,h.ultimateCD,std::max(7.f,std::min(bounded(s.topPanelUltimateCdFontSize,6,52)*scale,tiny*.6f)),h.ready[2]);
-   if(recall&&h.recalling){Vec2 a{left,top+side+gap+tiny+rgap},b{left+side,a.y+tiny};recallBorder(d,a,b,scale,2*scale);timer(d,a,b,h.recallSeconds,tiny*.6f);}
+   icon(d,textures_.skill(h.summonerID,h.alternateSummonerID),{left,top+side+gap},tiny,h.summonerCD,font,true);
+   float rounding=std::max(2.f,4*scale);d->AddRect({left,top+side+gap},{left+tiny,top+side+gap+tiny},0xe1ffffff,rounding,0,scale);
+   Vec2 ultimate{left+tiny+3*scale,top+side+gap},ultimateEnd{ultimate.x+tiny,ultimate.y+tiny};
+   d->AddRectFilled(v(ultimate),v(ultimateEnd),h.ultimateCD>0?0xeb161210:0xeb6ed240,rounding);
+   d->AddRect(v(ultimate),v(ultimateEnd),h.ultimateCD>0?0xe1ffffff:0xdce0ffd2,rounding,0,scale);
+   if(h.ultimateCD>0){char value[24];std::snprintf(value,sizeof value,"%d",h.ultimateCD);float font=std::max(7.f,std::min(bounded(s.topPanelUltimateCdFontSize,6,52)*scale,tiny*.6f));text(d,{ultimate.x+tiny*.5f,ultimate.y+(tiny-font)*.5f},font,value,0xffffffff);}
+   if(recall&&h.recalling){Vec2 a{left,top+side+gap+tiny+rgap},b{left+tiny,a.y+tiny};
+    auto image=textures_.skill(99999);if(image&&!textures_.isFallback(image))d->AddImage(image,v(a),v(b));else{d->AddRectFilled(v(a),v(b),0xdc1e1814,3*scale);text(d,{left+tiny*.5f,a.y+tiny*.18f},std::max(6.f,tiny*.4f),"回城",0xff48b8ff);}
+    recallBorder(d,a,b,scale,3*scale);timer(d,a,b,h.recallSeconds,std::max(6.f,bounded(s.topPanelSkillCdFontSize,6,52)*scale*.6f));}
    ++index;
   }
   if(index==0)text(d,{x+width*.5f,y+4*scale},16*scale,"无英雄数据",0xffffffff);
