@@ -12,5 +12,7 @@ check:
 	./build/game-data-tests
 	$(CXX) $(CXXFLAGS) -ICore -IVendor/imgui Core/Geometry.cpp Core/ESPRenderer.cpp Tests/RendererTests.cpp Vendor/imgui/imgui.cpp Vendor/imgui/imgui_draw.cpp Vendor/imgui/imgui_tables.cpp Vendor/imgui/imgui_widgets.cpp -o build/renderer-tests
 	./build/renderer-tests
+	$(CXX) $(CXXFLAGS) -ICore -IVendor/imgui Core/SettingsMenu.cpp Tests/MenuTests.cpp Vendor/imgui/imgui.cpp Vendor/imgui/imgui_draw.cpp Vendor/imgui/imgui_tables.cpp Vendor/imgui/imgui_widgets.cpp -o build/menu-tests
+	./build/menu-tests
 clean:
 	rm -rf build

@@ -3,6 +3,7 @@
 #include "HUDProcess.hpp"
 #include <cmath>
 #include "SettingsStore.hpp"
+#include "SettingLabels.hpp"
 @interface MainController:UIViewController<UITableViewDataSource,UITableViewDelegate>
 @end
 @implementation MainController {
@@ -37,7 +38,7 @@
 -(void)stop{auto result=ts::spawnHUDMode(false);_status.text=[NSString stringWithUTF8String:result.message.c_str()];}
 -(NSInteger)tableView:(UITableView*)table numberOfRowsInSection:(NSInteger)section{(void)table;(void)section;return _names.count;}
 -(UITableViewCell*)tableView:(UITableView*)table cellForRowAtIndexPath:(NSIndexPath*)index{
- (void)table;UITableViewCell* cell=[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];NSString* name=_names[index.row];NSNumber* value=_settings[name];cell.textLabel.text=name;cell.textLabel.font=[UIFont systemFontOfSize:13];
+ (void)table;UITableViewCell* cell=[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];NSString* name=_names[index.row];NSNumber* value=_settings[name];cell.textLabel.text=[NSString stringWithUTF8String:ts::settingLabel(name.UTF8String)];cell.textLabel.font=[UIFont systemFontOfSize:13];
  if(CFGetTypeID((__bridge CFTypeRef)value)==CFBooleanGetTypeID()){
   UISwitch* toggle=[UISwitch new];toggle.on=value.boolValue;toggle.tag=index.row;[toggle addTarget:self action:@selector(toggle:) forControlEvents:UIControlEventValueChanged];cell.accessoryView=toggle;
  }else cell.detailTextLabel.text=value.stringValue;
@@ -46,7 +47,7 @@
 -(void)toggle:(UISwitch*)sender{_settings[_names[sender.tag]]=@(sender.on);ts::saveSettings(ts::settingsFromDictionary(_settings));}
 -(void)tableView:(UITableView*)table didSelectRowAtIndexPath:(NSIndexPath*)index{
  [table deselectRowAtIndexPath:index animated:YES];NSString* name=_names[index.row];NSNumber* value=_settings[name];if(CFGetTypeID((__bridge CFTypeRef)value)==CFBooleanGetTypeID())return;
- UIAlertController* alert=[UIAlertController alertControllerWithTitle:name message:@"输入数值" preferredStyle:UIAlertControllerStyleAlert];[alert addTextFieldWithConfigurationHandler:^(UITextField* field){field.text=value.stringValue;field.keyboardType=UIKeyboardTypeNumbersAndPunctuation;}];
+ UIAlertController* alert=[UIAlertController alertControllerWithTitle:[NSString stringWithUTF8String:ts::settingLabel(name.UTF8String)] message:@"输入数值" preferredStyle:UIAlertControllerStyleAlert];[alert addTextFieldWithConfigurationHandler:^(UITextField* field){field.text=value.stringValue;field.keyboardType=UIKeyboardTypeNumbersAndPunctuation;}];
  [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
  [alert addAction:[UIAlertAction actionWithTitle:@"保存" style:UIAlertActionStyleDefault handler:^(UIAlertAction* action){(void)action;NSScanner* scanner=[NSScanner scannerWithString:alert.textFields.firstObject.text?:@""];double number=0;if(![scanner scanDouble:&number]||!scanner.isAtEnd||!std::isfinite(number))return;self->_settings[name]=@(number);ts::saveSettings(ts::settingsFromDictionary(self->_settings));[self->_table reloadRowsAtIndexPaths:@[index] withRowAnimation:UITableViewRowAnimationNone];}]];[self presentViewController:alert animated:YES completion:nil];
 }

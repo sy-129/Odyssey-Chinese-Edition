@@ -26,7 +26,7 @@ public struct SignedLicense: Decodable, Sendable {
 public enum InstallationIdentity {
     public static func load() throws -> String {
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "local.trollspeed.rebuild.license", kSecAttrAccount as String: "installation"]
+            kSecAttrService as String: "local.trollspeed.rebuild.license", kSecAttrAccessGroup as String: "local.trollspeed.rebuild", kSecAttrAccount as String: "installation"]
         var item: CFTypeRef?
         var read = query
         read[kSecReturnData as String] = true

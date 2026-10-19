@@ -5,6 +5,8 @@ MetalTextures::MetalTextures(id<MTLDevice> device):device_(device){
  fallback_=[device_ newTextureWithDescriptor:descriptor];std::uint32_t pixels[64*64]{};
  for(int y=0;y<64;y++)for(int x=0;x<64;x++)if((x-32)*(x-32)+(y-32)*(y-32)<=900)pixels[y*64+x]=0xff6464ff;
  [fallback_ replaceRegion:MTLRegionMake2D(0,0,64,64) mipmapLevel:0 withBytes:pixels bytesPerRow:64*4];
+ NSString* path=[[NSBundle mainBundle] pathForResource:@"xuanfuqiu" ofType:@"jpg"];
+ if(path){MTKTextureLoader* loader=[[MTKTextureLoader alloc] initWithDevice:device_];floating_=[loader newTextureWithContentsOfURL:[NSURL fileURLWithPath:path] options:@{MTKTextureLoaderOptionSRGB:@NO} error:nil];}
 }
 id<MTLTexture> MetalTextures::loadHero(int assetID){
  auto found=heroes_.find(assetID);if(found!=heroes_.end())return found->second;

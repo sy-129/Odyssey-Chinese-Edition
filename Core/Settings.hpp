@@ -27,6 +27,7 @@ struct Settings {
  float heroHPBarThickness = 5.800000190734863f; // 0x100030c5c, original field +0x58
  float boxUltimateCdFontSize = 25.700000762939453f; // 0x100030c6c, original field +0x5c
  float boxSkillCdFontSize = 33.79999923706055f; // 0x100030c7c, original field +0x60
+ float heroBoxColorR = 255.0f; // 0x100030c8c, original field +0x64
  float heroBoxColorG = 255.0f; // 0x100030c9c, original field +0x68
  float heroBoxColorB = 255.0f; // 0x100030cac, original field +0x6c
  float heroScaleX = 101.80000305175781f; // 0x100030cbc, original field +0x70

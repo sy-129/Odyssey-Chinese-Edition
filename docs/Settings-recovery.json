@@ -169,6 +169,13 @@
   },
   {
     "type": "float",
+    "name": "heroBoxColorR",
+    "offset": 100,
+    "default": 255.0,
+    "address": "0x100030c8c"
+  },
+  {
+    "type": "float",
     "name": "heroBoxColorG",
     "offset": 104,
     "default": 255.0,

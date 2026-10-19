@@ -6,6 +6,18 @@
 	<string>TrollSpeed</string>
 	<key>CFBundleExecutable</key>
 	<string>TrollSpeedRebuild</string>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AppIcon60x60</string>
+			</array>
+			<key>UIPrerenderedIcon</key>
+			<true/>
+		</dict>
+	</dict>
 	<key>CFBundleIdentifier</key>
 	<string>local.trollspeed.rebuild</string>
 	<key>CFBundleName</key>
@@ -22,10 +34,6 @@
 	<string>16.0</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>连接你配置的授权服务。</string>
-	<key>UIDeviceFamily</key>
-	<array>
-		<integer>1</integer>
-	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UIRequiresFullScreen</key>

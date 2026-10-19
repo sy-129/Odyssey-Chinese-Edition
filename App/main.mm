@@ -18,10 +18,14 @@ static void record(NSString* message){[message writeToFile:logPath atomically:YE
 @implementation HUDWindow
 -(BOOL)_isSystemWindow{return YES;}
 -(BOOL)_isWindowServerHostingManaged{return NO;}
--(BOOL)_ignoresHitTest{return YES;}
+-(BOOL)_ignoresHitTest{return NO;}
 -(BOOL)_isSecure{return ts::loadSettings().hideAtSnapshot;}
 -(BOOL)_shouldCreateContextAsSecure{return ts::loadSettings().hideAtSnapshot;}
--(UIView*)hitTest:(CGPoint)point withEvent:(UIEvent*)event{(void)point;(void)event;return nil;}
+-(UIView*)hitTest:(CGPoint)point withEvent:(UIEvent*)event{
+ HUDController* controller=(HUDController*)self.rootViewController;
+ if([controller capturePoint:[controller.view convertPoint:point fromView:self]])return [super hitTest:point withEvent:event];
+ return nil;
+}
 @end
 @interface MainDelegate:UIResponder<UIApplicationDelegate>
 @property(nonatomic,strong)UIWindow* window;
@@ -44,6 +48,26 @@ static void record(NSString* message){[message writeToFile:logPath atomically:YE
  NSMethodSignature* signature=[self.hosting methodSignatureForSelector:registerSelector];NSInvocation* invocation=[NSInvocation invocationWithMethodSignature:signature];invocation.target=self.hosting;invocation.selector=registerSelector;[invocation setArgument:&context atIndex:2];[invocation setArgument:&level atIndex:3];[invocation invoke];record(@"HUD 窗口已注册，正在检查授权和游戏数据");return YES;
 }
 @end
+// Original 0x10000b294 / 0x10000b570: AXEventRepresentation from the fourth HID callback argument.
+static BOOL axFlag(id event,NSString* name){SEL selector=NSSelectorFromString(name);return [event respondsToSelector:selector]&&((BOOL(*)(id,SEL))objc_msgSend)(event,selector);}
+static void hidCallback(void* target,void* refcon,void* service,CFTypeRef hid){
+ (void)target;(void)refcon;(void)service;if(!hid)return;
+ @autoreleasepool{
+  Class representation=NSClassFromString(@"AXEventRepresentation");SEL factory=NSSelectorFromString(@"representationWithHIDEvent:hidStreamIdentifier:");
+  if(![representation respondsToSelector:factory])return;
+  id event=((id(*)(id,SEL,CFTypeRef,id))objc_msgSend)(representation,factory,hid,@"UIApplicationEvents");
+  SEL location=NSSelectorFromString(@"location");if(![event respondsToSelector:location])return;
+  CGPoint point=((CGPoint(*)(id,SEL))objc_msgSend)(event,location);
+  NSUInteger phase=axFlag(event,@"isTouchDown")?UITouchPhaseBegan:axFlag(event,@"isMove")?UITouchPhaseMoved:axFlag(event,@"isCancel")?UITouchPhaseCancelled:UITouchPhaseEnded;
+  id hand=[event valueForKey:@"handInfo"];NSArray* paths=[hand valueForKey:@"paths"];id path=paths.firstObject;NSUInteger identity=[[path valueForKey:@"pathIdentity"] unsignedIntegerValue];if(identity==0)return;identity=MIN(identity,98);
+  dispatch_async(dispatch_get_main_queue(),^{UIWindow* window=UIApplication.sharedApplication.delegate.window;HUDController* controller=(HUDController*)window.rootViewController;[controller globalTouch:point phase:phase identity:identity];});
+ }
+}
+static BOOL installHUDInput(){
+ [[NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/AccessibilityUtilities.framework"] load];
+ using Register=void(*)(void(*)(void*,void*,void*,CFTypeRef));auto install=reinterpret_cast<Register>(dlsym(RTLD_DEFAULT,"BKSHIDEventRegisterEventCallback"));
+ if(!install||!NSClassFromString(@"AXEventRepresentation"))return NO;install(hidCallback);return YES;
+}
 static BOOL stopHUD(void){
  int pid=[[NSString stringWithContentsOfFile:pidPath encoding:NSUTF8StringEncoding error:nil] intValue];if(pid<=1)return NO;
  using ProcessPath=int(*)(int,void*,uint32_t);auto processPath=reinterpret_cast<ProcessPath>(dlsym(RTLD_DEFAULT,"proc_pidpath"));
@@ -66,6 +90,7 @@ int main(int argc,char** argv){@autoreleasepool{
  [UIScreen class];CFRunLoopGetCurrent();gs();display();initialize();singleton(HUDApplication.class);
  static HUDDelegate* delegate;delegate=[HUDDelegate new];UIApplication* app=UIApplication.sharedApplication;app.delegate=delegate;
  SEL accessibility=NSSelectorFromString(@"_accessibilityInit");if([app respondsToSelector:accessibility])((void(*)(id,SEL))objc_msgSend)(app,accessibility);
+ if(!installHUDInput())record(@"HID/AX 触摸接口不可用；可在主应用修改设置");
  SEL run=NSSelectorFromString(@"__completeAndRunAsPlugin");if(![app respondsToSelector:run]){record(@"缺少 HUD 插件运行接口");return 11;}
  ((void(*)(id,SEL))objc_msgSend)(app,run);CFRunLoopRun();return 0;
 }}

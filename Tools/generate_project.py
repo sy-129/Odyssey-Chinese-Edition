@@ -18,8 +18,11 @@ for p in sources:
  path=str(p.relative_to(root));kind={'cpp':'sourcecode.cpp.cpp','mm':'sourcecode.cpp.objcpp','swift':'sourcecode.swift'}[p.suffix[1:]]
  ref=obj(path,'PBXFileReference',lastKnownFileType=kind,path=path,sourceTree='<group>');refs.append(ref)
  builds.append(obj('build:'+path,'PBXBuildFile',fileRef=ref))
+for p in sorted([*root.glob('Core/*.hpp'),*root.glob('App/*.hpp'),root/'App/Info.plist',root/'App/Entitlements.plist']):
+ path=str(p.relative_to(root));kind='sourcecode.cpp.h' if p.suffix=='.hpp' else 'text.plist.xml'
+ refs.append(obj(path,'PBXFileReference',lastKnownFileType=kind,path=path,sourceTree='<group>'))
 resources=[]
-for path,kind in [('Resources/wztx','folder'),('Resources/OriginalOffsets.json','text.json'),('AuthClient/public-config.json','text.json')]:
+for path,kind in [('Resources/wztx','folder'),('Resources/xuanfuqiu.jpg','image.jpeg'),('Resources/AppIcon60x60@2x.png','image.png'),('Resources/OriginalOffsets.json','text.json'),('AuthClient/public-config.json','text.json')]:
  ref=obj(path,'PBXFileReference',lastKnownFileType=kind,path=path,sourceTree='<group>');refs.append(ref);resources.append(obj('resource:'+path,'PBXBuildFile',fileRef=ref))
 frameworks=[]
 for name in ['UIKit','Foundation','Metal','MetalKit','QuartzCore','CoreGraphics','Security']:

@@ -23,10 +23,18 @@ Fixtures are isolated verification inputs, never an application data source or a
 
 - Apple SDK compilation/linking succeeded in run 39227882696; packaging and latest changes are being rechecked.
 - Complete rendering parity: minimap recall badge, top-panel recall row, texture fallbacks, layout and scale details must be compared further.
-- Original floating controls/menu layout and modern HID-to-touch event forwarding are not reconstructed. The current native settings editor is a replacement interface.
+- Floating control, settings menu and HID/AX input are implemented; exact original menu layout and device input delivery still need verification. The native main-app settings editor is a replacement interface.
 - Game profile compatibility with the specified game release is not established by static analysis.
 - Device-only checks: entitlement effectiveness, task access, private HUD startup/window orientation, real coordinates and overlays.
 - The authorization service is not deployed; the user requested a configurable address. Automatic signed-lease renewal is implemented and server-tested; background behavior on the target device needs verification.
 - The client is not claimed to be unbreakable against a person controlling the device or modifying the executable.
 
 No item above is marked complete based only on successful compilation or a generated IPA.
+
+## HUD interaction reconstruction
+
+A floating ImGui control, three settings groups, dragging and hit-region pass-through are now implemented. The input path resolves `BKSHIDEventRegisterEventCallback`, wraps its fourth callback argument with `AXEventRepresentation`, then reads `location`, `handInfo.paths.pathIdentity` and touch-phase selectors, as recovered from original 0x10000b294 / 0x10000b570. It feeds the owned ImGui interface directly; it does not synthesize UITouch objects or alter the game's input.
+
+Five headless interaction/settings-validation checks pass. This establishes menu state logic, not actual iOS HID delivery or exact original menu appearance. The original floating-control JPEG and app icon are now restored from the hash-checked archive; exact dimensions and visual parity still need device comparison.
+
+All 58 settings getters were recovered after correcting decimal-offset parsing for heroBoxColorR at original field +100. UI and storage include that field. Application/keychain identifiers were explicitly added for the new client's own Keychain item; TrollStore's official entitlement example uses an unprefixed application-identifier. Keychain behavior still needs real-device verification.

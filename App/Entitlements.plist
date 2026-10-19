@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>application-identifier</key>
+	<string>local.trollspeed.rebuild</string>
 	<key>com.apple.AXMediaUtilitiesService-access</key>
 	<true/>
 	<key>com.apple.DragUI.accessibility</key>
@@ -146,6 +148,10 @@
 	<true/>
 	<key>get-task-allow</key>
 	<true/>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>local.trollspeed.rebuild</string>
+	</array>
 	<key>platform-application</key>
 	<true/>
 	<key>run-unsigned-code</key>

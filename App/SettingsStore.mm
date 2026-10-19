@@ -1,4 +1,5 @@
 #include "SettingsStore.hpp"
+#include "SettingsValidation.hpp"
 namespace ts {
 static NSString* const path=@"/var/mobile/Library/Preferences/local.trollspeed.rebuild.settings.plist";
 NSDictionary<NSString*,NSNumber*>* settingsDictionary(const Settings& s){return @{
@@ -26,6 +27,7 @@ NSDictionary<NSString*,NSNumber*>* settingsDictionary(const Settings& s){return 
 @"heroHPBarThickness":@(s.heroHPBarThickness),
 @"boxUltimateCdFontSize":@(s.boxUltimateCdFontSize),
 @"boxSkillCdFontSize":@(s.boxSkillCdFontSize),
+@"heroBoxColorR":@(s.heroBoxColorR),
 @"heroBoxColorG":@(s.heroBoxColorG),
 @"heroBoxColorB":@(s.heroBoxColorB),
 @"heroScaleX":@(s.heroScaleX),
@@ -117,7 +119,8 @@ Settings settingsFromDictionary(NSDictionary<NSString*,NSNumber*>* d){Settings s
  if([d[@"menuBackgroundColorG"] isKindOfClass:NSNumber.class])s.menuBackgroundColorG=[d[@"menuBackgroundColorG"] floatValue];
  if([d[@"menuBackgroundColorB"] isKindOfClass:NSNumber.class])s.menuBackgroundColorB=[d[@"menuBackgroundColorB"] floatValue];
  if([d[@"floatingBallScale"] isKindOfClass:NSNumber.class])s.floatingBallScale=[d[@"floatingBallScale"] floatValue];
- return s;
+ if([d[@"heroBoxColorR"] isKindOfClass:NSNumber.class])s.heroBoxColorR=[d[@"heroBoxColorR"] floatValue];
+ validateSettings(s);return s;
 }
 Settings loadSettings(){return settingsFromDictionary([NSDictionary dictionaryWithContentsOfFile:path]?:@{});}
 void saveSettings(const Settings& s){[settingsDictionary(s) writeToFile:path atomically:YES];}
