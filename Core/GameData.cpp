@@ -52,8 +52,8 @@ std::optional<Frame> GameReader::capture(double now,bool includeMinions){
   h.healthFraction=static_cast<float>(h.hp)/static_cast<float>(h.maxHP);h.dead=h.hp==0;h.position=smoother_.sample(actor,pos);
   auto talent=talents(actor);h.summonerID=talent[0]?talent[0]:talent[1];h.alternateSummonerID=talent[1];
   auto& cache=skills_[actor];if(cache.updated==0||now-cache.updated>=.15){
-   cache.ultimate=cooldown(actor,offsets_.skill3);cache.summoner=cooldown(actor,offsets_.skill4);cache.skill0=cooldown(actor,offsets_.skill0);cache.skill1=cooldown(actor,offsets_.skill1);
-   auto skills=pointer(at(actor,offsets_.skillList));std::array<std::uint64_t,4> slots{offsets_.skill0,offsets_.skill1,offsets_.skill2,offsets_.skill3};
+   cache.ultimate=cooldown(actor,offsets_.skill3);cache.summoner=cooldown(actor,offsets_.skill4);cache.skill0=cooldown(actor,offsets_.skill1);cache.skill1=cooldown(actor,offsets_.skill2);
+   auto skills=pointer(at(actor,offsets_.skillList));std::array<std::uint64_t,4> slots{offsets_.skill1,offsets_.skill2,offsets_.skill3,offsets_.skill4};
    for(unsigned n=0;n<4;n++){cache.ready[n]=skillReady(pointer(at(skills,slots[n])));}
    cache.updated=now;
   }
