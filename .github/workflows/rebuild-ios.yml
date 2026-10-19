@@ -33,6 +33,7 @@ jobs:
           if [ -d "$APP/Frameworks" ]; then
             find "$APP/Frameworks" -name '*.dylib' -exec codesign --force --sign - --timestamp=none {} \;
           fi
+          /usr/libexec/PlistBuddy -c "Add :ReconstructionCommit string $GITHUB_SHA" "$APP/Info.plist"
           codesign --force --sign - --timestamp=none --entitlements App/Entitlements.plist --generate-entitlement-der "$APP"
           codesign --verify --strict "$APP"
           mkdir -p build/package/Payload

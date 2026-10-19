@@ -108,11 +108,11 @@
 	</array>
 	<key>com.apple.security.exception.mach-register.global-name</key>
 	<array>
-		<string>com.tianqi.ss.ll.gsEvents</string>
+		<string>local.trollspeed.rebuild.gsEvents</string>
 	</array>
 	<key>com.apple.security.exception.mach-register.local-name</key>
 	<array>
-		<string>com.tianqi.ss.ll</string>
+		<string>local.trollspeed.rebuild</string>
 	</array>
 	<key>com.apple.security.iokit-user-client-class</key>
 	<array>
