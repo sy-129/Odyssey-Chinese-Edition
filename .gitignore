@@ -1,0 +1,11 @@
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+AuthServer/state/
+AuthServer/.venv/
+__pycache__/
+*.pyc
+ADMIN-CREDENTIALS.txt
+issuer.pem
+auth.db*
