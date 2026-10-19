@@ -22,6 +22,15 @@ jobs:
           git -C Vendor/imgui checkout 6ccc561a2ab497ad4ae6ee1dbd3b992ffada35cb
       - name: Verify portable implementation
         run: make check
+      - name: Compare original ARM64 coordinate routines with reconstruction
+        run: |
+          python3 -m venv build/verification-venv
+          build/verification-venv/bin/pip install -r Tools/requirements-verification.txt
+          python3 Tools/prepare_original_for_verification.py
+          c++ -std=c++17 -O2 -dynamiclib -ICore Core/Geometry.cpp Tools/GeometryBridge.cpp -o build/geometry-bridge.dylib
+          c++ -std=c++17 -O2 -dynamiclib -ICore Core/CoordinateAccess.cpp Tools/CoordinateBridge.cpp -o build/coordinate-bridge.dylib
+          build/verification-venv/bin/python Tools/compare_geometry.py --binary build/original-arm64.bin --library build/geometry-bridge.dylib --output build/geometry-binary-comparison.json
+          build/verification-venv/bin/python Tools/compare_coordinate_vm.py --binary build/original-arm64.bin --library build/coordinate-bridge.dylib --output build/coordinate-binary-comparison.json
       - name: Generate project and build with Apple SDK
         run: |
           python3 Tools/generate_project.py
@@ -46,7 +55,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: apple-sdk-build-log
-          path: build/xcodebuild.log
+          path: |
+            build/xcodebuild.log
+            build/geometry-binary-comparison.json
+            build/coordinate-binary-comparison.json
       - name: Preserve compiled package
         uses: actions/upload-artifact@v4
         with:

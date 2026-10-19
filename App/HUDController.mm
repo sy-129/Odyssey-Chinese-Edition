@@ -94,8 +94,8 @@
   view.preferredFramesPerSecond=std::clamp(_settings.frameRate,30,120);
   ImGui_ImplMetal_NewFrame(descriptor);ImGui::NewFrame();
   if(_menu.draw(_settings,{io.DisplaySize.x,io.DisplaySize.y},_textures->floating())){ts::saveSettings(_settings);}
-  auto frame=_engine.frame();_renderer->draw(ImGui::GetBackgroundDrawList(),frame,_settings,{io.DisplaySize.x,io.DisplaySize.y});
-  if(frame.timestamp==0)ImGui::GetBackgroundDrawList()->AddText({24,60},0xffffffff,_engine.status().c_str());
+  auto frame=_engine.frame();if(_settings.enableESP&&frame.timestamp>0)_renderer->draw(ImGui::GetBackgroundDrawList(),frame,_settings,{io.DisplaySize.x,io.DisplaySize.y});
+  if(_settings.enableESP&&frame.timestamp==0)ImGui::GetBackgroundDrawList()->AddText({24,60},0xffffffff,_engine.status().c_str());
   ImGui::Render();auto command=[_queue commandBuffer];auto encoder=[command renderCommandEncoderWithDescriptor:descriptor];
   ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(),command,encoder);[encoder endEncoding];[command presentDrawable:drawable];[command commit];
  }

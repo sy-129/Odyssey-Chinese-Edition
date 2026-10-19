@@ -67,3 +67,11 @@
 - Where: Core/GameData.cpp, found by pointer-graph lifecycle verification.
 - Repro: capture two different positions, remove the actor-array pointer, restore it, then capture again.
 - Correction: reset caches when the actor root is unavailable. The fixture verifies smoothing within a match and a fresh unfiltered sample after reset.
+
+## ESP master switch/data-ready gate
+
+- Expected: disabling ESP suppresses all ESP markers, and unreadied game data does not produce stale markers.
+- What happened: the reconstructed caller always invoked the renderer; the original renderer's internal enableESP test only guarded minimap avatars.
+- Where: App/HUDController.mm; comparison with original ImGuiDraw::draw (0x100014f74) and renderImGuiMenu's copy of enableESP to DAT_100418c70.
+- Repro: disable ESP while a valid frame contains visible heroes; the old caller still emitted world boxes and skill icons.
+- Correction: restore the caller's master gate and require a nonzero valid-frame timestamp before rendering. Menu interaction remains available.

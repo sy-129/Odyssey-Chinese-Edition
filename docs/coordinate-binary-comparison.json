@@ -1,0 +1,146 @@
+{
+  "original_binary_sha256": "9edd63717324f62a1ff5fcb52c93bc3a56201e2416813db493cfb9556c89a605",
+  "routine": "0x100018b60",
+  "passed": true,
+  "case_count": 22,
+  "cases": [
+    {
+      "case": "0_STORE_locations",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    },
+    {
+      "case": "1_STORE_locations",
+      "patched": 1,
+      "matched_mask": 1,
+      "memory_equal": true
+    },
+    {
+      "case": "2_STORE_locations",
+      "patched": 2,
+      "matched_mask": 3,
+      "memory_equal": true
+    },
+    {
+      "case": "3_STORE_locations",
+      "patched": 3,
+      "matched_mask": 7,
+      "memory_equal": true
+    },
+    {
+      "case": "4_STORE_locations",
+      "patched": 4,
+      "matched_mask": 15,
+      "memory_equal": true
+    },
+    {
+      "case": "5_STORE_locations",
+      "patched": 5,
+      "matched_mask": 31,
+      "memory_equal": true
+    },
+    {
+      "case": "6_STORE_locations",
+      "patched": 6,
+      "matched_mask": 63,
+      "memory_equal": true
+    },
+    {
+      "case": "7_STORE_locations",
+      "patched": 7,
+      "matched_mask": 127,
+      "memory_equal": true
+    },
+    {
+      "case": "8_STORE_locations",
+      "patched": 8,
+      "matched_mask": 255,
+      "memory_equal": true
+    },
+    {
+      "case": "9_STORE_locations",
+      "patched": 9,
+      "matched_mask": 511,
+      "memory_equal": true
+    },
+    {
+      "case": "wrong_vtable",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    },
+    {
+      "case": "missing_state",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    },
+    {
+      "case": "wrong_mode",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    },
+    {
+      "case": "wrong_NOP_opcode",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    },
+    {
+      "case": "wrong_STORE_opcode",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    },
+    {
+      "case": "wrong_invalid_opcode",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    },
+    {
+      "case": "short_code",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    },
+    {
+      "case": "oversized_code",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    },
+    {
+      "case": "write_denied",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    },
+    {
+      "case": "write_corruption",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    },
+    {
+      "case": "short_read_back",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    },
+    {
+      "case": "already_NOP_fresh_candidate",
+      "patched": 0,
+      "matched_mask": 0,
+      "memory_equal": true
+    }
+  ],
+  "scope": "Original ARM64 candidate validation and opcode patching versus reconstructed C++; not region discovery, target-game compatibility or iOS execution",
+  "controlled_boundaries": [
+    "task-port lookup",
+    "kernel memory read/write",
+    "vector allocation/deallocation"
+  ]
+}

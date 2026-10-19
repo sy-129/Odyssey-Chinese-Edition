@@ -15,7 +15,7 @@ class ESPRenderer {
  void text(ImDrawList*,Vec2,float,const char*,ImU32);
  void recallBorder(ImDrawList*,Vec2,Vec2,float,float);
  void timer(ImDrawList*,Vec2,Vec2,float,float);
- void icon(ImDrawList*,ImTextureID,Vec2,float,int,float,bool);
+ void icon(ImDrawList*,ImTextureID,Vec2,float,int,float,bool,ImU32 overlay=0x8c000000,float rounding=0,float stroke=0,ImU32 border=0xebffffff);
 public:
  explicit ESPRenderer(Textures& textures):textures_(textures){}
  void draw(ImDrawList*,const Frame&,const Settings&,Vec2 viewport);

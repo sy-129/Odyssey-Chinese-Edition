@@ -22,7 +22,7 @@ Fixtures are isolated verification inputs, never an application data source or a
 ## Open work and unknowns
 
 - Apple SDK compilation/linking succeeded in run 39227882696; packaging and latest changes are being rechecked.
-- Complete rendering parity: minimap recall badge, top-panel recall row, texture fallbacks, layout and scale details must be compared further.
+- Rendered images have not been compared on the target device; visual parity and original upstream ImGui WIP differences remain unresolved.
 - Floating control, settings menu and HID/AX input are implemented; exact original menu layout and device input delivery still need verification. The native main-app settings editor is a replacement interface.
 - Game profile compatibility with the specified game release is not established by static analysis.
 - Device-only checks: entitlement effectiveness, task access, private HUD startup/window orientation, real coordinates and overlays.
@@ -52,3 +52,11 @@ The original instruction at 0x100032664 loads integer 0xd903 (55555) for the fin
 The main app's copy-diagnostics action includes startup messages plus a timestamped report from the real reader thread: target PID/module, coordinate read-back status/count, matrix, entity counts, and up to five actual observed hero samples. It contains no administrator password, issuer key, license code or refresh token. Reports are rate-limited to once per second. No data fixture is connected to the app. A non-finite matrix is rejected before rendering or JSON serialization; the data pointer-graph checks include that case.
 
 HUD numeric controls use bounded touch-drag widgets rather than relying on an unavailable ImGui on-screen keyboard. Main-app numeric fields continue to use UIKit's keyboard. Menu text/background colors and navigation/content font scales are wired to the recovered settings. These interaction improvements are explicit reconstruction choices, not evidence of pixel-for-pixel menu parity.
+
+## Direct comparison with original coordinate machine code
+
+`Tools/compare_coordinate_vm.py` executes original routine 0x100018b60 in Unicorn and compares its result with `Core/CoordinateAccess.cpp` through a native bridge. Twenty-two scenarios pass with identical patch count, matched-PC mask and all four MiB of resulting remote-memory fixture bytes. Scenarios include 0–9 matching STORE locations, invalid object/state/opcodes/mode/length, denied/corrupted writes, partial read-back and an already-NOP candidate.
+
+Task lookup, kernel memory I/O and vector allocation/deallocation are controlled boundaries. The original validator and patching instructions execute unchanged. This checks the candidate routine, not original region discovery, real game layout or iOS task permissions. Both this comparison and the 800-case geometry comparison now run in GitHub Actions and preserve JSON evidence.
+
+Further drawing comparison corrected side-skill outlines/overlay opacity, the world recall badge's local rectangle and font scaling, the no-hero top-panel layout, and the app-level ESP master switch/data-ready gate recovered from original 0x100014f74 and renderImGuiMenu.
