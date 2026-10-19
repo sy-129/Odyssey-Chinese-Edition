@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS admin(username TEXT PRIMARY KEY,salt TEXT NOT NULL,pa
 CREATE TABLE IF NOT EXISTS sessions(token_hash TEXT PRIMARY KEY,expires INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS licenses(id TEXT PRIMARY KEY,key_hash TEXT UNIQUE NOT NULL,expires INTEGER NOT NULL,device TEXT,revoked INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS challenges(nonce_hash TEXT PRIMARY KEY,device TEXT NOT NULL,expires INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS refresh_tokens(token_hash TEXT PRIMARY KEY,license_id TEXT NOT NULL,device TEXT NOT NULL,expires INTEGER NOT NULL);
 '''
 def password_hash(password,salt):return hashlib.pbkdf2_hmac('sha256',password.encode(),bytes.fromhex(salt),600000).hex()
 def init(state:Path):
