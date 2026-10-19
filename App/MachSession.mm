@@ -1,7 +1,7 @@
 #include "MachSession.hpp"
 #include <sys/sysctl.h>
 #include <unistd.h>
-#include <mach/mach_vm.h>
+#include <mach/vm_map.h>
 #include <mach/vm_region.h>
 #include <vector>
 #include <cstring>
@@ -23,7 +23,7 @@ bool MachSession::attach(pid_t pid,std::string& error){
 }
 ts::ReadResult MachSession::read(std::uint64_t address,void* destination,std::size_t count)const{
  if(task_==MACH_PORT_NULL||!destination||count==0||!ts::add(address,count))return {false,0};
- mach_vm_size_t copied=0;auto kr=mach_vm_read_overwrite(task_,address,count,reinterpret_cast<mach_vm_address_t>(destination),&copied);
+ vm_size_t copied=0;auto kr=vm_read_overwrite(task_,address,count,reinterpret_cast<vm_address_t>(destination),&copied);
  return {kr==KERN_SUCCESS,static_cast<std::size_t>(copied)};
 }
 pid_t MachSession::findProcess(const std::string& name,std::string& error){
@@ -42,11 +42,11 @@ pid_t MachSession::findProcess(const std::string& name,std::string& error){
 }
 std::optional<ts::Image> MachSession::findGameImage(std::string& error)const{
  if(task_==MACH_PORT_NULL){error="尚未取得进程访问句柄";return {};}
- mach_vm_address_t address=0;natural_t depth=0;std::optional<ts::Image> executable;
+ vm_address_t address=0;natural_t depth=0;std::optional<ts::Image> executable;
  // REA FUN_10002d908: inspect readable/executable mappings and prefer UnityFramework.
  for(unsigned count=0;count<65536;count++){
-  mach_vm_size_t size=0;vm_region_submap_info_data_64_t info{};mach_msg_type_number_t words=VM_REGION_SUBMAP_INFO_COUNT_64;
-  auto kr=mach_vm_region_recurse(task_,&address,&size,&depth,reinterpret_cast<vm_region_recurse_info_t>(&info),&words);
+  vm_size_t size=0;vm_region_submap_info_data_64_t info{};mach_msg_type_number_t words=VM_REGION_SUBMAP_INFO_COUNT_64;
+  auto kr=vm_region_recurse(task_,&address,&size,&depth,reinterpret_cast<vm_region_recurse_info_t>(&info),&words);
   if(kr==KERN_INVALID_ADDRESS)break;
   if(kr!=KERN_SUCCESS){error="内存区域枚举失败："+std::string(mach_error_string(kr));return {};}
   if(info.is_submap){if(depth>=64){error="内存映射嵌套超过限制";return {};}++depth;continue;}
@@ -63,14 +63,14 @@ std::optional<ts::Image> MachSession::findGameImage(std::string& error)const{
 
 bool MachSession::write(std::uint64_t address,const void* bytes,std::size_t count){
  if(task_==MACH_PORT_NULL||!bytes||count==0||count>UINT32_MAX||!ts::add(address,count))return false;
- return mach_vm_write(task_,address,reinterpret_cast<vm_offset_t>(bytes),static_cast<mach_msg_type_number_t>(count))==KERN_SUCCESS;
+ return vm_write(task_,address,reinterpret_cast<vm_offset_t>(bytes),static_cast<mach_msg_type_number_t>(count))==KERN_SUCCESS;
 }
 std::vector<ts::Region> MachSession::regions(std::string& error)const{
  std::vector<ts::Region> result;if(task_==MACH_PORT_NULL){error="尚未取得进程句柄";return result;}
- pid_t pid=0;pid_for_task(task_,&pid);mach_vm_address_t address=0;natural_t depth=0;
+ pid_t pid=0;pid_for_task(task_,&pid);vm_address_t address=0;natural_t depth=0;
  for(unsigned i=0;i<65536;i++){
-  mach_vm_size_t size=0;vm_region_submap_info_data_64_t info{};mach_msg_type_number_t words=VM_REGION_SUBMAP_INFO_COUNT_64;
-  auto kr=mach_vm_region_recurse(task_,&address,&size,&depth,reinterpret_cast<vm_region_recurse_info_t>(&info),&words);
+  vm_size_t size=0;vm_region_submap_info_data_64_t info{};mach_msg_type_number_t words=VM_REGION_SUBMAP_INFO_COUNT_64;
+  auto kr=vm_region_recurse(task_,&address,&size,&depth,reinterpret_cast<vm_region_recurse_info_t>(&info),&words);
   if(kr==KERN_INVALID_ADDRESS)break;if(kr!=KERN_SUCCESS){error=mach_error_string(kr);return {};}
   if(info.is_submap){if(depth>=64){error="内存区域嵌套过深";return {};}++depth;continue;}
   char path[4096]{};using RegionFilename=int(*)(int,uint64_t,void*,uint32_t);
