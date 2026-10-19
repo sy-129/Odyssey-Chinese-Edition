@@ -42,3 +42,12 @@
 - Where: Core/GameData.cpp, found by comparison with corrected GetPlayers pseudocode.
 - Repro: the isolated pointer-graph fixture assigns distinct cooldowns and readiness to every raw skill slot.
 - Correction: match DAT_10041db18/db1c/db20/db24 to the loader's skill1/2/3/4 mappings; seven data extraction checks pass.
+
+## Packaging shell syntax
+
+- Expected: ad hoc sign and package after the Apple SDK build succeeds.
+- What happened: the shell reported `syntax error: unexpected end of file` after `BUILD SUCCEEDED`.
+- Where: signing/packaging step, run 39227882696.
+- Repro: run the previous one-line conditional containing `find -exec … \; fi`.
+- Cause: the escaped `\;` terminates find's command, not the shell's conditional body.
+- Correction: put the find command and closing `fi` on separate lines. Packaging recheck required.
