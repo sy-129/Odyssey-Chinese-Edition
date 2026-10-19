@@ -1,0 +1,15 @@
+{
+  "original_binary_sha256": "9edd63717324f62a1ff5fcb52c93bc3a56201e2416813db493cfb9556c89a605",
+  "compared_cases": 800,
+  "passed": true,
+  "max_absolute_error": 0.0,
+  "tolerance": {
+    "relative": 2e-06,
+    "absolute": 0.0002
+  },
+  "scope": [
+    "ToScreen finite inputs",
+    "mini-map projection finite inputs"
+  ],
+  "execution": "Unicorn ARM64 arithmetic only; Objective-C retain/release and scale getters controlled; no iOS/game execution"
+}
