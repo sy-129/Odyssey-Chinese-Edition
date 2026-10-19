@@ -1,0 +1,5 @@
+{
+  "algorithm": "Ed25519",
+  "public_key_base64": "fDyY+jC2gHiZdQNU/UReVVs6CLanlQ+1vGt8NyEBWEg=",
+  "token_lifetime_seconds": 600
+}
