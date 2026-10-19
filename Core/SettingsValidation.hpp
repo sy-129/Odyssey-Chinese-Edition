@@ -53,6 +53,8 @@ inline void validateSettings(Settings& s){const Settings defaults;
  s.bigMapScale=std::clamp(s.bigMapScale,.1f,10.f);
  s.miniMapAvatarScale=std::clamp(s.miniMapAvatarScale,.1f,10.f);
  s.floatingBallScale=std::clamp(s.floatingBallScale,.1f,2.f);
+ s.menuLeftNavFontScale=std::clamp(s.menuLeftNavFontScale,.5f,2.f);
+ s.menuRightContentFontScale=std::clamp(s.menuRightContentFontScale,.5f,2.f);
  s.frameRate=std::clamp(s.frameRate,30,120);
 }
 }

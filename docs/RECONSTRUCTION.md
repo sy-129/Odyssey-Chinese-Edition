@@ -50,3 +50,5 @@ The original instruction at 0x100032664 loads integer 0xd903 (55555) for the fin
 ## Device diagnostic evidence
 
 The main app's copy-diagnostics action includes startup messages plus a timestamped report from the real reader thread: target PID/module, coordinate read-back status/count, matrix, entity counts, and up to five actual observed hero samples. It contains no administrator password, issuer key, license code or refresh token. Reports are rate-limited to once per second. No data fixture is connected to the app. A non-finite matrix is rejected before rendering or JSON serialization; the data pointer-graph checks include that case.
+
+HUD numeric controls use bounded touch-drag widgets rather than relying on an unavailable ImGui on-screen keyboard. Main-app numeric fields continue to use UIKit's keyboard. Menu text/background colors and navigation/content font scales are wired to the recovered settings. These interaction improvements are explicit reconstruction choices, not evidence of pixel-for-pixel menu parity.
