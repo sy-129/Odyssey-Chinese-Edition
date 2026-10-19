@@ -12,20 +12,21 @@ The original has Mach task access, a persona-spawned HUD, private system window 
 
 - 25 memory/Mach-O parser and geometry checks.
 - 6 coordinate discovery, retry and memory-fault checks.
+- 7 data pointer-graph checks, including original visible skill-slot numbering.
 - Real Dear ImGui populated/empty-frame geometry emission checks.
 - 800 numerical comparisons of the original isolated ARM64 projection/minimap routines with the rewritten C++ routines; exact finite-case agreement in recorded runs.
-- Authorization server: 15 HTTP checks recorded separately.
+- Authorization server: 22 HTTP checks, including automatic-renewal token rotation, replay/device rejection and revocation.
 
 Fixtures are isolated verification inputs, never an application data source or a representation of actual game capture.
 
 ## Open work and unknowns
 
-- Apple SDK compilation and resulting corrections.
+- Apple SDK compilation/linking succeeded in run 39227882696; packaging and latest changes are being rechecked.
 - Complete rendering parity: minimap recall badge, top-panel recall row, texture fallbacks, layout and scale details must be compared further.
 - Original floating controls/menu layout and modern HID-to-touch event forwarding are not reconstructed. The current native settings editor is a replacement interface.
 - Game profile compatibility with the specified game release is not established by static analysis.
 - Device-only checks: entitlement effectiveness, task access, private HUD startup/window orientation, real coordinates and overlays.
-- The authorization service is not deployed; the user requested a configurable address. The current short lease expires after 10 minutes without a new activation; uninterrupted renewal needs completion.
+- The authorization service is not deployed; the user requested a configurable address. Automatic signed-lease renewal is implemented and server-tested; background behavior on the target device needs verification.
 - The client is not claimed to be unbreakable against a person controlling the device or modifying the executable.
 
 No item above is marked complete based only on successful compilation or a generated IPA.
