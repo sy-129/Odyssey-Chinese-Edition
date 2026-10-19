@@ -5,6 +5,8 @@ from cryptography.exceptions import InvalidSignature
 root=pathlib.Path(__file__).resolve().parent
 with tempfile.TemporaryDirectory(prefix='trollspeed-auth-check-') as temporary:
  state=pathlib.Path(temporary);subprocess.run([sys.executable,str(root/'bootstrap.py'),'--state',str(state)],check=True,stdout=subprocess.DEVNULL)
+ # Exercise migration from an existing pre-renewal deployment without replacing issuer/admin data.
+ with sqlite3.connect(state/'auth.db') as db:db.execute('DROP TABLE refresh_tokens')
  password=(state/'ADMIN-CREDENTIALS.txt').read_text().split('Password: ',1)[1].splitlines()[0]
  with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
  env=dict(os.environ,TS_AUTH_STATE_DIR=str(state));proc=subprocess.Popen([sys.executable,'-m','uvicorn','server:app','--host','127.0.0.1','--port',str(port),'--no-access-log'],cwd=root,env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
@@ -40,9 +42,22 @@ with tempfile.TemporaryDirectory(prefix='trollspeed-auth-check-') as temporary:
   except InvalidSignature:check(True)
   check(request('/v1/activate',body)[0]==403)
   another_nonce=request('/v1/challenge',{'device_id':other})[1]['nonce'];check(request('/v1/activate',{'device_id':other,'license_key':issued['license_key'],'nonce':another_nonce})[0]==403)
+  renewal_nonce=request('/v1/challenge',{'device_id':device})[1]['nonce']
+  refresh_body={'device_id':device,'refresh_token':envelope['refresh_token'],'nonce':renewal_nonce}
+  status,renewed=request('/v1/refresh',refresh_body);check(status==200)
+  renewed_raw=base64.b64decode(renewed['payload']);public.verify(base64.b64decode(renewed['signature']),renewed_raw)
+  check(json.loads(renewed_raw)['nonce']==renewal_nonce)
+  check(renewed['refresh_token']!=envelope['refresh_token'])
+  fresh_nonce=request('/v1/challenge',{'device_id':device})[1]['nonce']
+  check(request('/v1/refresh',dict(refresh_body,nonce=fresh_nonce))[0]==403)
+  check(request('/v1/refresh',dict(refresh_body,refresh_token=renewed['refresh_token']))[0]==403)
+  wrong_nonce=request('/v1/challenge',{'device_id':other})[1]['nonce']
+  check(request('/v1/refresh',{'device_id':other,'refresh_token':renewed['refresh_token'],'nonce':wrong_nonce})[0]==403)
   check(request('/admin/licenses/'+issued['license_id']+'/revoke',{},token)[0]==200)
   nonce=request('/v1/challenge',{'device_id':device})[1]['nonce'];check(request('/v1/activate',dict(body,nonce=nonce))[0]==403)
   check(request('/admin/licenses',token=token)[1]['licenses'][0]['revoked']==1)
+  renewal_nonce=request('/v1/challenge',{'device_id':device})[1]['nonce']
+  check(request('/v1/refresh',{'device_id':device,'refresh_token':renewed['refresh_token'],'nonce':renewal_nonce})[0]==403)
   status,expired=request('/admin/licenses',{'days':1},token);check(status==200)
   with sqlite3.connect(state/'auth.db') as db:db.execute('UPDATE licenses SET expires=0 WHERE id=?',(expired['license_id'],))
   nonce=request('/v1/challenge',{'device_id':device})[1]['nonce'];check(request('/v1/activate',{'device_id':device,'license_key':expired['license_key'],'nonce':nonce})[0]==403)
