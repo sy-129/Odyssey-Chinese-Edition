@@ -42,5 +42,13 @@ int main(){
  Fixture denied;denied.memory.rejectWrite=true;ts::CoordinateAccess deny(denied.memory,denied.offsets);require(!deny.initialize(denied.regions).success,"denied writes cannot report success");
  Fixture corrupt;corrupt.memory.corruptWrite=true;ts::CoordinateAccess corruptAccess(corrupt.memory,corrupt.offsets);require(!corruptAccess.initialize(corrupt.regions).success,"short/corrupt writes cannot report success");
  Fixture wrong;wrong.memory.set<std::uint32_t>(128,0);ts::CoordinateAccess wrongAccess(wrong.memory,wrong.offsets);require(!wrongAccess.initialize(wrong.regions).success&&wrong.memory.writes==0,"wrong module signature must prevent all writes");
- std::cout<<"6 coordinate memory fault/retry checks passed\n";
+ Fixture configured;ts::Offsets original;configured.offsets.tsCoordCount=original.tsCoordCount;configured.offsets.tsCoordPc0=original.tsCoordPc0;configured.offsets.tsCoordPc1=original.tsCoordPc1;
+ configured.memory.set<std::uint32_t>(0x4000+original.tsStateCodeLenOff,80000);configured.regions[1].size=0x1e000;
+ std::array<std::uint64_t,9> pcs{original.tsCoordPc0,original.tsCoordPc1,original.tsCoordPc2,original.tsCoordPc3,original.tsCoordPc4,original.tsCoordPc5,original.tsCoordPc6,original.tsCoordPc7,original.tsCoordPc8};
+ for(auto pc:pcs){configured.memory.set<std::uint32_t>(0x8000+pc,0x13121102);}
+ ts::CoordinateAccess configuredAccess(configured.memory,configured.offsets);auto complete=configuredAccess.initialize(configured.regions);
+ require(complete.success&&complete.patched==9,"all nine configured PCs must be patched and read back");
+ require(complete.records.size()==1&&complete.records[0].matchedMask==0x1ff,"every configured opcode contributes to the verified mask");
+ require(configured.memory.bytes[0x8000+100]==original.tsOpcodeStoreValue,"unconfigured STORE bytes must remain unchanged");
+ std::cout<<"9 coordinate memory fault/retry/profile checks passed\n";
 }

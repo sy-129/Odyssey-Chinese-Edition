@@ -1,6 +1,7 @@
 #include "GameData.hpp"
 #include <algorithm>
 #include <set>
+#include <cmath>
 namespace ts {
 namespace {bool valid(std::uint64_t p){return p>=0x100000000ULL&&p<0x8000000000ULL;}}
 std::uint64_t GameReader::at(std::uint64_t b,std::uint64_t o)const{auto p=add(b,o);return p&&valid(*p)?*p:0;}
@@ -40,8 +41,8 @@ void GameReader::reset(){smoother_.clear();skills_.clear();recalls_.clear();mons
 std::optional<Frame> GameReader::capture(double now,bool includeMinions){
  if(pid_<1||!valid(module_))return {};
  auto p=pointer(at(module_,offsets_.matrix));for(auto off:{offsets_.matrixHop1,offsets_.matrixHop2,offsets_.matrixHop3})p=pointer(at(p,off));
- auto matrixValue=matrix(memory_,at(p,offsets_.matrixField));if(!matrixValue||((*matrixValue)[0]==0&&(*matrixValue)[10]==0)){reset();return {};}
- auto root=pointer(at(module_,offsets_.gameStruct));auto entityRoot=pointer(at(root,offsets_.entityRoot));auto actors=pointer(at(entityRoot,offsets_.actorArray));if(!actors)return {};
+ auto matrixValue=matrix(memory_,at(p,offsets_.matrixField));if(!matrixValue||std::any_of(matrixValue->begin(),matrixValue->end(),[](float value){return !std::isfinite(value);})||((*matrixValue)[0]==0&&(*matrixValue)[10]==0)){reset();return {};}
+ auto root=pointer(at(module_,offsets_.gameStruct));auto entityRoot=pointer(at(root,offsets_.entityRoot));auto actors=pointer(at(entityRoot,offsets_.actorArray));if(!actors){reset();return {};}
  Frame frame;frame.matrix=*matrixValue;frame.timestamp=now;int ownTeam=frame.matrix[0]>0?1:2;
  for(auto i=skills_.begin();i!=skills_.end();)if(now-i->second.updated>3)i=skills_.erase(i);else ++i;
  for(auto i=recalls_.begin();i!=recalls_.end();)if(now-i->second.lastSeen>3)i=recalls_.erase(i);else ++i;

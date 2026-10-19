@@ -11,8 +11,8 @@ The original has Mach task access, a persona-spawned HUD, private system window 
 ## Checked locally
 
 - 25 memory/Mach-O parser and geometry checks.
-- 6 coordinate discovery, retry and memory-fault checks.
-- 7 data pointer-graph checks, including original visible skill-slot numbering.
+- 9 coordinate discovery, retry, memory-fault and full nine-PC profile checks.
+- 11 data pointer-graph checks, including original visible skill-slot numbering, non-finite matrix rejection and match-cache reset.
 - Real Dear ImGui populated/empty-frame geometry emission checks.
 - 800 numerical comparisons of the original isolated ARM64 projection/minimap routines with the rewritten C++ routines; exact finite-case agreement in recorded runs.
 - Authorization server: 22 HTTP checks, including automatic-renewal token rotation, replay/device rejection and revocation.
@@ -46,3 +46,7 @@ Original 0x10000992c / 0x10000ad58 observe FBS orientation changes and rotate th
 ## Skill texture fallback
 
 The original instruction at 0x100032664 loads integer 0xd903 (55555) for the final bundled skill fallback, and the constant integer object at 0x100332fd8 contains the same value. The supplied archive includes wztx/55555.png. Missing primary/alternate skills now use this asset before falling back to the generated red disc. The original remappings 80116→80104 and 80117→80118 remain intact.
+
+## Device diagnostic evidence
+
+The main app's copy-diagnostics action includes startup messages plus a timestamped report from the real reader thread: target PID/module, coordinate read-back status/count, matrix, entity counts, and up to five actual observed hero samples. It contains no administrator password, issuer key, license code or refresh token. Reports are rate-limited to once per second. No data fixture is connected to the app. A non-finite matrix is rejected before rendering or JSON serialization; the data pointer-graph checks include that case.

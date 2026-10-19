@@ -3,6 +3,7 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
+#include <limits>
 struct Memory:ts::Memory {
  std::map<std::uint64_t,std::uint8_t> bytes;
  template<class T>void set(std::uint64_t p,const T& value){auto* b=reinterpret_cast<const std::uint8_t*>(&value);for(std::size_t n=0;n<sizeof value;n++)bytes[p+n]=b[n];}
@@ -32,7 +33,11 @@ int main(){
  // The original loader maps DAT_10041db18/db1c/db20/db24 to skill1/2/3/4.
  require(h.skill0CD==2&&h.skill1CD==3&&h.ultimateCD==4&&h.summonerCD==5,"visible skill numbering differs from raw profile slot zero");
  require(h.ready==std::array<bool,4>{true,false,true,false},"visible readiness follows slots 1/2/3/4");
+ memory.set<std::int32_t>(position+o.posX,20000);result=reader.capture(10.2,false);require(result&&result->heroes[0].position.x==11.5f,"within-match samples retain smoothing history");
+ link(entities+o.actorArray,0);require(!reader.capture(10.3,false),"missing actor root invalidates the frame");
+ link(entities+o.actorArray,actors);result=reader.capture(10.4,false);require(result&&result->heroes[0].position.x==20,"new actor root must not reuse previous-match smoothing");
  memory.set<std::int32_t>(hero+o.team,1);result=reader.capture(11,false);require(result&&result->heroes.empty(),"own team must be excluded");
+ matrix[7]=std::numeric_limits<float>::quiet_NaN();memory.set(m3+o.matrixField,matrix);require(!reader.capture(11.5,false),"nonfinite matrix must not reach rendering or diagnostic serialization");
  memory.set(m3+o.matrixField,ts::Matrix{});require(!reader.capture(12,false),"zero matrix invalidates match data");
- std::cout<<"7 data pointer-graph and original skill-slot checks passed\n";
+ std::cout<<"11 data pointer-graph, skill-slot and match-reset checks passed\n";
 }

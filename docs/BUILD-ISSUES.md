@@ -51,3 +51,19 @@
 - Repro: run the previous one-line conditional containing `find -exec … \; fi`.
 - Cause: the escaped `\;` terminates find's command, not the shell's conditional body.
 - Correction: put the find command and closing `fi` on separate lines. Packaging recheck required.
+
+## Matrix data containing non-finite values
+
+- Expected: reject unusable game matrices before they reach rendering and diagnostic JSON.
+- What happened: implementation review found that a successfully read matrix containing NaN could pass the old zero-matrix check; JSON serialization does not accept NaN.
+- Where: Core/GameData.cpp, capture(), identified without claiming a device crash.
+- Repro: put NaN in the pointer-graph fixture's matrix while keeping matrix[0] nonzero.
+- Correction: reject non-finite elements and reset cached match data. The added fault check passes.
+
+## Cache retained across a missing actor root
+
+- Expected: after match data disappears, the next match's first position is unfiltered and no old skill/recall state is reused.
+- What happened: the missing-actor-root branch returned an invalid frame without clearing the reader caches.
+- Where: Core/GameData.cpp, found by pointer-graph lifecycle verification.
+- Repro: capture two different positions, remove the actor-array pointer, restore it, then capture again.
+- Correction: reset caches when the actor root is unavailable. The fixture verifies smoothing within a match and a fresh unfiltered sample after reset.

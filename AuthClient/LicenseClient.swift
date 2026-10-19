@@ -8,6 +8,20 @@ public enum LicenseError: Error {
     case invalidConfiguration, serverRejected(Int), malformedReply, invalidSignature
     case wrongInstallation, expired, wrongChallenge, keychain(OSStatus)
 }
+extension LicenseError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .invalidConfiguration: return "服务器地址必须使用 HTTPS，公钥配置也必须有效。"
+        case .serverRejected(let code): return "授权服务拒绝请求（HTTP \(code)），请检查授权码、设备绑定和撤销状态。"
+        case .malformedReply: return "授权服务返回的数据格式无效。"
+        case .invalidSignature: return "授权签名验证失败，请确认服务器与应用使用同一套签发密钥。"
+        case .wrongInstallation: return "该授权不属于当前安装实例。"
+        case .expired: return "授权或验证请求已过期，请重新激活。"
+        case .wrongChallenge: return "授权回复与本次验证请求不匹配，请重试。"
+        case .keychain(let status): return "钥匙串访问失败（系统错误 \(status)）。"
+        }
+    }
+}
 
 public struct SignedLicense: Decodable, Sendable {
     public let version: Int
@@ -170,7 +184,7 @@ public final class TSLicenseBridge: NSObject {
                 let license = try await client.activate(key: key)
                 await MainActor.run { completion(true, "授权有效至 \(Date(timeIntervalSince1970: TimeInterval(license.expires_at)))") }
             } catch {
-                await MainActor.run { completion(false, "授权失败：\(error)") }
+                await MainActor.run { completion(false, "授权失败：\(error.localizedDescription)") }
             }
         }
     }

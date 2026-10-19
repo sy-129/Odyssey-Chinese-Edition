@@ -24,6 +24,6 @@ LaunchResult spawnHUDMode(bool enable){
  char enabled[]="-hud",disabled[]="-exit";char* args[]={path.data(),enable?enabled:disabled,nullptr};pid_t pid=0;
  status=posix_spawn(&pid,path.data(),nullptr,&attr,args,environ);
  if(status)return {false,0,status,strerror(status)};
- return {true,pid,0,"子进程创建成功；这不证明 HUD 初始化或游戏读取成功"};
+ return {true,pid,0,enable?"已发送悬浮层启动请求":"已发送悬浮层停止请求"};
 }
 }
