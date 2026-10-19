@@ -1,0 +1,50 @@
+name: Rebuild iOS application
+on:
+  push:
+    branches: ['codex/trollspeed-rebuild']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore verified original image resources
+        run: python3 Tools/prepare_resources.py
+      - name: Fetch pinned Dear ImGui
+        run: |
+          git clone --filter=blob:none --no-checkout https://github.com/ocornut/imgui.git Vendor/imgui
+          git -C Vendor/imgui checkout 6ccc561a2ab497ad4ae6ee1dbd3b992ffada35cb
+      - name: Verify portable implementation
+        run: make check
+      - name: Generate project and build with Apple SDK
+        run: |
+          python3 Tools/generate_project.py
+          set -o pipefail
+          xcodebuild -project TrollSpeedRebuild.xcodeproj -scheme TrollSpeedRebuild -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build 2>&1 | tee build/xcodebuild.log
+      - name: Ad hoc sign for TrollStore and package
+        run: |
+          APP=build/DerivedData/Build/Products/Release-iphoneos/TrollSpeedRebuild.app
+          if [ -d "$APP/Frameworks" ]; then find "$APP/Frameworks" -name '*.dylib' -exec codesign --force --sign - --timestamp=none {} \; fi
+          codesign --force --sign - --timestamp=none --entitlements App/Entitlements.plist --generate-entitlement-der "$APP"
+          codesign --verify --strict "$APP"
+          mkdir -p build/package/Payload
+          cp -R "$APP" build/package/Payload/
+          cd build/package
+          zip -q -r ../TrollSpeedRebuild.ipa Payload
+          shasum -a 256 ../TrollSpeedRebuild.ipa > ../TrollSpeedRebuild.ipa.sha256
+      - name: Preserve compiler evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apple-sdk-build-log
+          path: build/xcodebuild.log
+      - name: Preserve compiled package
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrollSpeedRebuild-unverified-on-device
+          path: |
+            build/TrollSpeedRebuild.ipa
+            build/TrollSpeedRebuild.ipa.sha256
