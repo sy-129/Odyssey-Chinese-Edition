@@ -3,6 +3,9 @@ on:
   push:
     branches: ['codex/trollspeed-rebuild']
   workflow_dispatch:
+concurrency:
+  group: trollspeed-rebuild-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
