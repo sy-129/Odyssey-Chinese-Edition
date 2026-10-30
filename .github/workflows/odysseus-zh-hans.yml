@@ -55,6 +55,42 @@ jobs:
           set -o pipefail
           make iphoneos 2>&1 | tee build.log
           test -f packages/Odysseus.ipa
+      - name: Test Chinese startup and main workflows on iPhone simulator
+        working-directory: upstream
+        env:
+          TMPDIR: ${{ runner.temp }}/
+        run: |
+          set -o pipefail
+          gem install --user-install xcodeproj --no-document
+          ruby localization/add_ui_tests.rb
+          DEVICE_ID=$(python3 - <<'PYDEVICE'
+          import json,subprocess
+          d=json.loads(subprocess.check_output(['xcrun','simctl','list','runtimes','--json']))
+          available=[r for r in d['runtimes'] if r.get('isAvailable') and r['identifier'].startswith('com.apple.CoreSimulator.SimRuntime.iOS-')]
+          assert available,'No iOS simulator runtime installed'
+          runtime=max(available,key=lambda r:tuple(int(x) for x in r['version'].split('.')))
+          identifier=subprocess.check_output(['xcrun','simctl','create','Odysseus Chinese QA','com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro',runtime['identifier']],text=True).strip()
+          import pathlib
+          pathlib.Path('localization/simulator-runtime.json').write_text(json.dumps({'device':'iPhone 16 Pro','runtime':runtime['name'],'version':runtime['version'],'identifier':identifier},indent=2))
+          print(identifier)
+          PYDEVICE
+          )
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcodebuild test -project Feather.xcodeproj -scheme OdysseusUITests \
+            -configuration Release -destination "id=$DEVICE_ID" \
+            -derivedDataPath "${RUNNER_TEMP}/Odysseus/iphoneos" \
+            -resultBundlePath "${RUNNER_TEMP}/Odysseus-UI.xcresult" \
+            -skipPackagePluginValidation -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO DEPLOYMENT_LOCATION=NO \
+            ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=NO 2>&1 | tee ui-test.log
+          mkdir -p ../delivery/screenshots
+          xcrun xcresulttool export attachments --path "${RUNNER_TEMP}/Odysseus-UI.xcresult" --output-path ../delivery/screenshots
+          xcrun xcresulttool get test-results summary --path "${RUNNER_TEMP}/Odysseus-UI.xcresult" > ../delivery/UI-TEST-SUMMARY.json
+          python3 localization/simulator_recovery_check.py "$DEVICE_ID" com.mirazbakis.Odysseus ../delivery/screenshots
+          swift localization/recognize_screenshots.swift ../delivery/screenshots
+          cp localization/simulator-runtime.json ../delivery/
+          ditto -c -k --keepParent ../delivery/screenshots ../delivery/Simulator-Screenshots.zip
       - name: Verify built Chinese resources and package corresponding source
         run: |
           mkdir -p delivery
@@ -77,10 +113,12 @@ jobs:
               plurals=load(locale/'Localizable.stringsdict') if (locale/'Localizable.stringsdict').exists() else {}
               missing=sorted(set(translations)-set(strings)-set(plurals));assert not missing,missing
               assert load(locale/'InfoPlist.strings')['CFBundleDisplayName']=='奥德赛签名'
-              report={'source_commit':'2664dadedf9aca36fda0925a8aada92e2c79323f','translated_catalog_keys':len(translations),'built_chinese_keys':len(set(strings)|set(plurals)),'missing_chinese_keys':missing,'bundle_id':info['CFBundleIdentifier'],'minimum_ios':info['MinimumOSVersion'],'ipa_sha256':hashlib.sha256(ipa.read_bytes()).hexdigest(),'xcode_device_build':'passed','iphone_16_pro_ios_27_0_1_runtime_tested':False}
+              subprocess.run(['codesign','--verify','--strict','--deep',str(app)],check=True)
+              subprocess.run(['swift','upstream/localization/check_runtime_formats.swift',str(locale)],check=True)
+              report={'source_commit':'2664dadedf9aca36fda0925a8aada92e2c79323f','translated_catalog_keys':len(translations),'built_chinese_keys':len(set(strings)|set(plurals)),'missing_chinese_keys':missing,'bundle_id':info['CFBundleIdentifier'],'minimum_ios':info['MinimumOSVersion'],'ipa_sha256':hashlib.sha256(ipa.read_bytes()).hexdigest(),'xcode_device_build':'passed','strict_bundle_signature':'passed','chinese_runtime_formatting':'passed','simulator_ui_tests':'passed','simulator_database_recovery':'passed','iphone_16_pro_ios_27_0_1_runtime_tested':False}
               pathlib.Path('delivery/BUILD-VERIFICATION.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
           PY
-          tar --exclude='.git' --exclude='*/.git' --exclude='deps' --exclude='_build' --exclude='packages' --exclude='build.log' -czf delivery/Odysseus-zh-Hans-source.tar.gz -C upstream .
+          tar --exclude='.git' --exclude='*/.git' --exclude='deps' --exclude='_build' --exclude='packages' --exclude='build.log' --exclude='ui-test.log' -czf delivery/Odysseus-zh-Hans-source.tar.gz -C upstream .
           cp upstream/localization/README.zh-CN.md delivery/README.zh-CN.md
           cd delivery
           shasum -a 256 Odysseus-zh-Hans.ipa Odysseus-zh-Hans-source.tar.gz > SHA256SUMS
@@ -89,7 +127,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Odysseus-Chinese-build-log-${{ github.run_number }}
-          path: upstream/build.log
+          path: |
+            upstream/build.log
+            upstream/ui-test.log
           if-no-files-found: ignore
       - name: Upload IPA and source
         uses: actions/upload-artifact@v4
@@ -101,6 +141,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "odysseus-zh-hans-${GITHUB_RUN_NUMBER}" delivery/* \
+          gh release create "odysseus-zh-hans-${GITHUB_RUN_NUMBER}" delivery/*.ipa delivery/*.gz delivery/*.json delivery/*.md delivery/*.zip delivery/SHA256SUMS \
             --title "Odysseus 简体中文 · 构建 ${GITHUB_RUN_NUMBER}" \
             --notes-file delivery/README.zh-CN.md
