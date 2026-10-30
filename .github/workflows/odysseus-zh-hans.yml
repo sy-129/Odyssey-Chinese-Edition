@@ -39,6 +39,11 @@ jobs:
           PY
           python3 upstream/localization/verify_localization.py
           git -C upstream diff --check
+      - name: Prepare UI test project
+        working-directory: upstream
+        run: |
+          gem install --user-install xcodeproj --no-document
+          ruby localization/add_ui_tests.rb
       - name: Restore Xcode and Swift build cache
         id: build_cache
         uses: actions/cache/restore@v4
@@ -63,8 +68,6 @@ jobs:
           TMPDIR: ${{ runner.temp }}/
         run: |
           set -o pipefail
-          gem install --user-install xcodeproj --no-document
-          ruby localization/add_ui_tests.rb
           DEVICE_ID=$(python3 - <<'PYDEVICE'
           import json,subprocess
           d=json.loads(subprocess.check_output(['xcrun','simctl','list','runtimes','--json']))
