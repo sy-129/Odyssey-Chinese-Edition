@@ -39,15 +39,17 @@ jobs:
           PY
           python3 upstream/localization/verify_localization.py
           git -C upstream diff --check
-      - name: Cache Swift dependencies
-        uses: actions/cache@v4
+      - name: Restore Xcode and Swift build cache
+        id: build_cache
+        uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ runner.temp }}/Odysseus/iphoneos/SourcePackages
+            ${{ runner.temp }}/Odysseus/iphoneos
             ~/Library/Caches/org.swift.swiftpm
-          key: odysseus-zh-${{ runner.os }}-${{ hashFiles('upstream/**/Package.resolved', 'upstream/**/Package.swift') }}
-          restore-keys: odysseus-zh-${{ runner.os }}-
+          key: odysseus-derived26.4-${{ runner.os }}-${{ hashFiles('upstream/localization/add_ui_tests.rb', 'upstream/localization/UITests/**', 'upstream/**/Package.swift') }}
+          restore-keys: odysseus-derived26.4-${{ runner.os }}-
       - name: Compile iPhone IPA
+        id: device_build
         working-directory: upstream
         env:
           TMPDIR: ${{ runner.temp }}/
@@ -131,6 +133,14 @@ jobs:
             upstream/build.log
             upstream/ui-test.log
           if-no-files-found: ignore
+      - name: Preserve successful compile cache even when a later test fails
+        if: always() && steps.device_build.outcome == 'success' && steps.build_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ runner.temp }}/Odysseus/iphoneos
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ steps.build_cache.outputs.cache-primary-key }}
       - name: Upload IPA and source
         uses: actions/upload-artifact@v4
         with:
