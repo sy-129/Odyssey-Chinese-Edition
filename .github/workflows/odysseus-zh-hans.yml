@@ -1,0 +1,106 @@
+name: Build Odysseus Simplified Chinese
+on:
+  push:
+    paths:
+      - 'odysseus-zh-Hans/**'
+      - '.github/workflows/odysseus-zh-hans.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: odysseus-chinese-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1.6.0
+        with:
+          xcode-version: '26.4'
+      - name: Fetch pinned upstream and apply Chinese changes
+        run: |
+          git clone --recurse-submodules https://github.com/mirazbakis/Odysseus.git upstream
+          git -C upstream checkout 2664dadedf9aca36fda0925a8aada92e2c79323f
+          git -C upstream submodule update --init --recursive
+          python3 - <<'PY'
+          import json,gzip,base64,hashlib,pathlib
+          p=json.loads(pathlib.Path('odysseus-zh-Hans/build-payload.json').read_text())
+          assert p['commit']=='2664dadedf9aca36fda0925a8aada92e2c79323f'
+          raw=gzip.decompress(base64.b64decode(p['data']))
+          assert hashlib.sha256(raw).hexdigest()==p['decoded_sha256']
+          files=json.loads(raw);assert len(files)==p['files']
+          root=pathlib.Path('upstream').resolve()
+          for name,text in files.items():
+              target=(root/name).resolve()
+              assert target.is_relative_to(root) and '.git' not in target.relative_to(root).parts
+              target.parent.mkdir(parents=True,exist_ok=True);target.write_text(text)
+          PY
+          python3 upstream/localization/verify_localization.py
+          git -C upstream diff --check
+      - name: Cache Swift dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}/Odysseus/iphoneos/SourcePackages
+            ~/Library/Caches/org.swift.swiftpm
+          key: odysseus-zh-${{ runner.os }}-${{ hashFiles('upstream/**/Package.resolved', 'upstream/**/Package.swift') }}
+          restore-keys: odysseus-zh-${{ runner.os }}-
+      - name: Compile iPhone IPA
+        working-directory: upstream
+        env:
+          TMPDIR: ${{ runner.temp }}/
+        run: |
+          set -o pipefail
+          make iphoneos 2>&1 | tee build.log
+          test -f packages/Odysseus.ipa
+      - name: Verify built Chinese resources and package corresponding source
+        run: |
+          mkdir -p delivery
+          cp upstream/packages/Odysseus.ipa delivery/Odysseus-zh-Hans.ipa
+          python3 - <<'PY'
+          import json,zipfile,plistlib,pathlib,hashlib,subprocess,tempfile
+          ipa=pathlib.Path('delivery/Odysseus-zh-Hans.ipa')
+          translations=json.loads(pathlib.Path('upstream/localization/translations-zh-Hans.json').read_text())
+          with zipfile.ZipFile(ipa) as z, tempfile.TemporaryDirectory() as td:
+              assert z.testzip() is None
+              z.extractall(td)
+              apps=list(pathlib.Path(td,'Payload').glob('*.app'));assert len(apps)==1
+              app=apps[0];info=plistlib.loads((app/'Info.plist').read_bytes())
+              assert (app/info['CFBundleExecutable']).stat().st_size>0
+              locale=app/'zh-Hans.lproj'
+              assert locale.is_dir()
+              def load(p):
+                  return json.loads(subprocess.check_output(['plutil','-convert','json','-o','-',str(p)]))
+              strings=load(locale/'Localizable.strings')
+              plurals=load(locale/'Localizable.stringsdict') if (locale/'Localizable.stringsdict').exists() else {}
+              missing=sorted(set(translations)-set(strings)-set(plurals));assert not missing,missing
+              assert load(locale/'InfoPlist.strings')['CFBundleDisplayName']=='奥德赛签名'
+              report={'source_commit':'2664dadedf9aca36fda0925a8aada92e2c79323f','translated_catalog_keys':len(translations),'built_chinese_keys':len(set(strings)|set(plurals)),'missing_chinese_keys':missing,'bundle_id':info['CFBundleIdentifier'],'minimum_ios':info['MinimumOSVersion'],'ipa_sha256':hashlib.sha256(ipa.read_bytes()).hexdigest(),'xcode_device_build':'passed','iphone_16_pro_ios_27_0_1_runtime_tested':False}
+              pathlib.Path('delivery/BUILD-VERIFICATION.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+          tar --exclude='.git' --exclude='*/.git' --exclude='deps' --exclude='_build' --exclude='packages' --exclude='build.log' -czf delivery/Odysseus-zh-Hans-source.tar.gz -C upstream .
+          cp upstream/localization/README.zh-CN.md delivery/README.zh-CN.md
+          cd delivery
+          shasum -a 256 Odysseus-zh-Hans.ipa Odysseus-zh-Hans-source.tar.gz > SHA256SUMS
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Odysseus-Chinese-build-log-${{ github.run_number }}
+          path: upstream/build.log
+          if-no-files-found: ignore
+      - name: Upload IPA and source
+        uses: actions/upload-artifact@v4
+        with:
+          name: Odysseus-zh-Hans-${{ github.run_number }}
+          path: delivery/
+          retention-days: 90
+      - name: Publish separate Chinese release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "odysseus-zh-hans-${GITHUB_RUN_NUMBER}" delivery/* \
+            --title "Odysseus 简体中文 · 构建 ${GITHUB_RUN_NUMBER}" \
+            --notes-file delivery/README.zh-CN.md
