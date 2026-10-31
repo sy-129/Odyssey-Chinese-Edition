@@ -53,6 +53,14 @@ jobs:
             ~/Library/Caches/org.swift.swiftpm
           key: odysseus-derived26.4-${{ runner.os }}-${{ hashFiles('upstream/localization/add_ui_tests.rb', 'upstream/localization/UITests/**', 'upstream/**/Package.swift') }}
           restore-keys: odysseus-derived26.4-${{ runner.os }}-
+      - name: Check Foundation numeric formatting before compilation
+        working-directory: upstream
+        run: |
+          swift localization/check_runtime_formats.swift --numeric-only
+          CACHED_LOCALE="${RUNNER_TEMP}/Odysseus/iphoneos/Build/Products/Release-iphoneos/Odysseus.app/zh-Hans.lproj"
+          if [ -d "$CACHED_LOCALE" ]; then
+            swift localization/check_runtime_formats.swift "$CACHED_LOCALE"
+          fi
       - name: Compile iPhone IPA
         id: device_build
         working-directory: upstream
