@@ -87,13 +87,13 @@ jobs:
             -derivedDataPath "${RUNNER_TEMP}/Odysseus/iphoneos" \
             -resultBundlePath "${RUNNER_TEMP}/Odysseus-UI.xcresult" \
             -skipPackagePluginValidation -parallel-testing-enabled NO \
-            CODE_SIGNING_ALLOWED=NO DEPLOYMENT_LOCATION=NO \
+            CODE_SIGNING_ALLOWED=NO DEPLOYMENT_LOCATION=NO ONLY_ACTIVE_ARCH=YES \
             ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=NO 2>&1 | tee ui-test.log
           mkdir -p ../delivery/screenshots
           xcrun xcresulttool export attachments --path "${RUNNER_TEMP}/Odysseus-UI.xcresult" --output-path ../delivery/screenshots
           xcrun xcresulttool get test-results summary --path "${RUNNER_TEMP}/Odysseus-UI.xcresult" > ../delivery/UI-TEST-SUMMARY.json
-          python3 localization/simulator_recovery_check.py "$DEVICE_ID" com.mirazbakis.Odysseus ../delivery/screenshots
-          swift localization/recognize_screenshots.swift ../delivery/screenshots
+          python3 localization/simulator_recovery_check.py "$DEVICE_ID" com.mirazbakis.Odysseus ../delivery/screenshots 2>&1 | tee simulator-recovery.log
+          swift localization/recognize_screenshots.swift ../delivery/screenshots 2>&1 | tee -a simulator-recovery.log
           cp localization/simulator-runtime.json ../delivery/
           ditto -c -k --keepParent ../delivery/screenshots ../delivery/Simulator-Screenshots.zip
       - name: Verify built Chinese resources and package corresponding source
@@ -135,6 +135,7 @@ jobs:
           path: |
             upstream/build.log
             upstream/ui-test.log
+            upstream/simulator-recovery.log
           if-no-files-found: ignore
       - name: Preserve successful compile cache even when a later test fails
         if: always() && steps.device_build.outcome == 'success' && steps.build_cache.outputs.cache-hit != 'true'
