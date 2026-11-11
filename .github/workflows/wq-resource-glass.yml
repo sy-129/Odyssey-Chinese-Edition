@@ -75,6 +75,12 @@ jobs:
             -destination "id=$DEVICE_ID" -derivedDataPath "$RUNNER_TEMP/WQResourceQA" \
             -resultBundlePath "$RUNNER_TEMP/WQResourceQA.xcresult" -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES 2>&1 | tee ui-test.log
+      - name: Preserve simulator screenshots and results even if a test fails
+        if: always()
+        working-directory: source
+        run: |
+          set -euo pipefail
+          if [ ! -d "$RUNNER_TEMP/WQResourceQA.xcresult" ]; then exit 0; fi
           mkdir -p ../delivery/screenshots
           xcrun xcresulttool export attachments --path "$RUNNER_TEMP/WQResourceQA.xcresult" --output-path ../delivery/screenshots
           xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/WQResourceQA.xcresult" > ../delivery/UI-TEST-SUMMARY.json
@@ -95,6 +101,9 @@ jobs:
             source/build.log
             source/ui-test.log
             source/.work/tests/**/**.log
+            delivery/screenshots/
+            delivery/UI-TEST-SUMMARY.json
+            delivery/SIMULATOR.json
           if-no-files-found: ignore
       - name: Upload verified IPA, source, screenshots and reports
         uses: actions/upload-artifact@v4
