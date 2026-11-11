@@ -110,7 +110,7 @@ jobs:
         with:
           name: WQResourceGlass-${{ github.run_number }}
           path: delivery/
-      - name: Publish owner-review draft with measured limitations
+      - name: Publish tested preview with measured limitations
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -121,9 +121,9 @@ jobs:
 
           本次构建已通过原项目回归、新增真实临时文件事务测试、严格iPhone arm64编译和签名校验，以及9项模拟器界面测试。实际模拟器系统见SIMULATOR.json，截图和完整源码在附件中。
 
-          这是供仓库所有者审阅的草稿，未标为百分百真机可用。用户设备的App Group令牌、跨应用访问和自动打开需要实际验证；用户游戏插件尚未接入回执，不能宣称游戏内悬浮窗已经开通；后台检测可能暂停。安装目录只读。请先查看BUILD-VERIFICATION.json与中文说明。
+          这是公开自测预览版，未标为百分百真机可用。用户设备的App Group令牌、跨应用访问和自动打开需要实际验证；用户游戏插件尚未接入回执，不能宣称游戏内悬浮窗已经开通；后台检测可能暂停。安装目录只读。请先查看BUILD-VERIFICATION.json与中文说明。
 
           重新签名时需描述文件实际允许并保留App Group；P12本身不保证具备此能力。
           EOF
           gh release create "wq-resource-glass-${GITHUB_RUN_NUMBER}" delivery/*.ipa delivery/*.gz delivery/*.zip delivery/*.json delivery/*.md delivery/SHA256SUMS \
-            --draft --title "WQ资源注入器 0.10.0 · 自测构建 ${GITHUB_RUN_NUMBER}" --notes-file "$RUNNER_TEMP/release-notes.md"
+            --prerelease --title "WQ资源注入器 0.10.0 · 自测预览 ${GITHUB_RUN_NUMBER}" --notes-file "$RUNNER_TEMP/release-notes.md"
