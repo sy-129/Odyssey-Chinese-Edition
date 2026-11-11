@@ -96,7 +96,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: WQResourceGlass-logs-${{ github.run_number }}
+          name: WQResourceGlass-logs-${{ github.run_number }}-attempt-${{ github.run_attempt }}
           path: |
             source/build.log
             source/ui-test.log
@@ -108,7 +108,7 @@ jobs:
       - name: Upload verified IPA, source, screenshots and reports
         uses: actions/upload-artifact@v4
         with:
-          name: WQResourceGlass-${{ github.run_number }}
+          name: WQResourceGlass-${{ github.run_number }}-attempt-${{ github.run_attempt }}
           path: delivery/
       - name: Publish tested preview with measured limitations
         env:
