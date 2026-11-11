@@ -115,15 +115,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cat > "$RUNNER_TEMP/release-notes.md" <<'EOF'
-          WQ 资源注入器 0.10.1，基于 kolbicz/WQFiles，GPL-3.0-or-later。
+          WQ 文件与资源 0.11.0，基于 kolbicz/WQFiles，GPL-3.0-or-later。
 
-          包含鲜红强调色与黑色原生玻璃界面、应用数据完整目录列表（取消安装包过滤，保留同标识的不同目录）、系统文件原件备份导出、回执检测接口与匹配后还原。
+          恢复原文件管理首页和全部原有工具入口；资源注入器作为工具整合，目录选择直接使用同一原文件浏览器，不另建应用列表。长按目录／普通文件可直接带入目标／源文件。黑色玻璃、鲜红文字、恶魔按钮；产品界面移除鸣谢，版权许可证随源码保留。
 
-          本次构建已通过原项目回归、新增真实临时文件事务测试、严格iPhone arm64编译和签名校验，以及9项模拟器界面测试。实际模拟器系统见SIMULATOR.json，截图和完整源码在附件中。
+          本次构建已通过原项目回归、新增真实临时文件事务测试、严格iPhone arm64编译和签名校验，以及12项模拟器界面测试。实际模拟器系统见SIMULATOR.json，截图和完整源码在附件中。
 
           这是公开自测预览版，未标为百分百真机可用。用户设备的App Group令牌、跨应用访问和自动打开需要实际验证；用户游戏插件尚未接入回执，不能宣称游戏内悬浮窗已经开通；后台检测可能暂停。安装目录只读。请先查看BUILD-VERIFICATION.json与中文说明。
 
           重新签名时需描述文件实际允许并保留App Group；P12本身不保证具备此能力。
           EOF
           gh release create "wq-resource-glass-${GITHUB_RUN_NUMBER}" delivery/*.ipa delivery/*.gz delivery/*.zip delivery/*.json delivery/*.md delivery/SHA256SUMS \
-            --prerelease --title "WQ资源注入器 0.10.1 · 自测预览 ${GITHUB_RUN_NUMBER}" --notes-file "$RUNNER_TEMP/release-notes.md"
+            --prerelease --title "WQ文件与资源 0.11.0 · 自测预览 ${GITHUB_RUN_NUMBER}" --notes-file "$RUNNER_TEMP/release-notes.md"
